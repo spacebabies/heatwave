@@ -2,16 +2,6 @@ import './style.css';
 import type { RoomDimensions, SoundSource, AcousticSettings } from './acousticModel';
 import { evaluateGrid } from './acousticModel';
 
-document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <canvas id="roomCanvas" width="800" height="400"></canvas>
-`;
-
-const canvas = document.getElementById('roomCanvas') as HTMLCanvasElement;
-const ctx = canvas.getContext('2d')!;
-
-// Coordinate conversion mapping
-const PIXELS_PER_METER = 20;
-
 // Application State
 export interface AppState {
   roomWidthM: number;
@@ -62,6 +52,49 @@ const appState: AppState = {
   
   dynamicRangeDb: 50,
 };
+
+document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
+  <canvas id="roomCanvas" width="800" height="400"></canvas>
+  <div id="controls" style="margin-top: 16px; display: flex; flex-direction: column; gap: 12px; font-family: sans-serif; font-size: 14px; max-width: 800px; text-align: left;">
+    <div style="display: flex; gap: 24px; padding-bottom: 12px; border-bottom: 1px solid #ccc;">
+      <div>
+        <strong>Sub 1</strong><br/>
+        <label><input type="checkbox" id="sub1Enabled" ${appState.sub1Enabled ? 'checked' : ''}> Enabled</label><br/>
+        <label>X (m): <input type="number" id="sub1X" value="${appState.sub1X}" style="width: 60px" step="0.1"></label><br/>
+        <label>Y (m): <input type="number" id="sub1Y" value="${appState.sub1Y}" style="width: 60px" step="0.1"></label>
+      </div>
+      <div>
+        <strong>Sub 2</strong><br/>
+        <label><input type="checkbox" id="sub2Enabled" ${appState.sub2Enabled ? 'checked' : ''}> Enabled</label><br/>
+        <label>X (m): <input type="number" id="sub2X" value="${appState.sub2X}" style="width: 60px" step="0.1"></label><br/>
+        <label>Y (m): <input type="number" id="sub2Y" value="${appState.sub2Y}" style="width: 60px" step="0.1"></label>
+      </div>
+    </div>
+    
+    <div style="display: flex; gap: 24px;">
+      <div>
+        <strong>Wall Reflections</strong><br/>
+        <label><input type="checkbox" id="enableWallReflections" ${appState.enableWallReflections ? 'checked' : ''}> Enabled</label><br/>
+        <label>Coefficient: <input type="number" id="wallReflectionCoefficient" value="${appState.wallReflectionCoefficient}" style="width: 60px" step="0.1" min="0" max="1"></label>
+      </div>
+      <div>
+        <strong>Floor Reflection</strong><br/>
+        <label><input type="checkbox" id="enableFloorReflection" ${appState.enableFloorReflection ? 'checked' : ''}> Enabled</label><br/>
+        <label>Coefficient: <input type="number" id="floorReflectionCoefficient" value="${appState.floorReflectionCoefficient}" style="width: 60px" step="0.1" min="0" max="1"></label>
+      </div>
+    </div>
+
+    <div style="font-size: 12px; color: #555;">
+      <em>Reflection coefficient examples: Glass ~0.95, Parquet / Hardwood ~0.90, Concrete / Hard drywall ~0.80</em>
+    </div>
+  </div>
+`;
+
+const canvas = document.getElementById('roomCanvas') as HTMLCanvasElement;
+const ctx = canvas.getContext('2d')!;
+
+// Coordinate conversion mapping
+const PIXELS_PER_METER = 20;
 
 // Derive simulation inputs from app state
 const room: RoomDimensions = { width: appState.roomWidthM, height: appState.roomHeightM };
