@@ -12,38 +12,77 @@ const ctx = canvas.getContext('2d')!;
 // Coordinate conversion mapping
 const PIXELS_PER_METER = 20;
 
-// Scene Presets
-const PRESETS = {
-  SINGLE_SUB: [
-    { x: 1, y: 1 }
-  ],
-  SEPARATED_SUBS: [
-    { x: 15, y: 1 },
-    { x: 25, y: 1 }
-  ],
-  STACKED_SUBS: [
-    { x: 19.7, y: 1 },
-    { x: 20.3, y: 1 }
-  ]
-};
+// Application State
+export interface AppState {
+  roomWidthM: number;
+  roomHeightM: number;
+  
+  sub1Enabled: boolean;
+  sub1X: number;
+  sub1Y: number;
+  sub1Z?: number;
+  
+  sub2Enabled: boolean;
+  sub2X: number;
+  sub2Y: number;
+  sub2Z?: number;
+  
+  frequency: number;
+  speedOfSound: number;
+  wallReflectionCoefficient: number;
+  floorReflectionCoefficient: number;
+  enableWallReflections: boolean;
+  enableFloorReflection: boolean;
+  listenerHeightM: number;
+  defaultSourceHeightM: number;
+  
+  dynamicRangeDb: number;
+}
 
-// Choose active preset here
-const ACTIVE_PRESET = PRESETS.SEPARATED_SUBS;
-
-// Room setup
-const room: RoomDimensions = { width: 40, height: 20 };
-const sources: SoundSource[] = ACTIVE_PRESET;
-
-// Acoustic Settings
-const acousticSettings: AcousticSettings = {
+const appState: AppState = {
+  roomWidthM: 40,
+  roomHeightM: 20,
+  
+  sub1Enabled: true,
+  sub1X: 1,
+  sub1Y: 1,
+  
+  sub2Enabled: false,
+  sub2X: 15,
+  sub2Y: 1,
+  
   frequency: 63.0,
   speedOfSound: 343.0,
   wallReflectionCoefficient: 0.8,
   floorReflectionCoefficient: 0.8,
   enableWallReflections: true,
   enableFloorReflection: true,
-  defaultSourceHeightM: 0.5,
   listenerHeightM: 1.5,
+  defaultSourceHeightM: 0.5,
+  
+  dynamicRangeDb: 50,
+};
+
+// Derive simulation inputs from app state
+const room: RoomDimensions = { width: appState.roomWidthM, height: appState.roomHeightM };
+
+const sources: SoundSource[] = [];
+if (appState.sub1Enabled) {
+  sources.push({ x: appState.sub1X, y: appState.sub1Y, z: appState.sub1Z });
+}
+if (appState.sub2Enabled) {
+  sources.push({ x: appState.sub2X, y: appState.sub2Y, z: appState.sub2Z });
+}
+
+const acousticSettings: AcousticSettings = {
+  frequency: appState.frequency,
+  speedOfSound: appState.speedOfSound,
+  wallReflectionCoefficient: appState.wallReflectionCoefficient,
+  floorReflectionCoefficient: appState.floorReflectionCoefficient,
+  enableWallReflections: appState.enableWallReflections,
+  enableFloorReflection: appState.enableFloorReflection,
+  listenerHeightM: appState.listenerHeightM,
+  defaultSourceHeightM: appState.defaultSourceHeightM,
 };
 
 // Convert room coordinates (meters, bottom-left origin) to canvas coordinates (pixels, top-left origin)
@@ -64,15 +103,13 @@ function drawHeatmap() {
   const { data, maxSPL } = evaluateGrid(room, sources, acousticSettings, cols, rows, CELL_SIZE_PX, PIXELS_PER_METER);
   
   // 2. Render data
-  const DYNAMIC_RANGE_DB = 50; // Show a 50dB range
-  
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       const spl = data[row * cols + col];
       const relativeSPL = spl - maxSPL; // 0 at max, negative elsewhere
       
       // Map relative SPL to [0, 1] for coloring
-      const t = Math.max(0, (relativeSPL + DYNAMIC_RANGE_DB) / DYNAMIC_RANGE_DB);
+      const t = Math.max(0, (relativeSPL + appState.dynamicRangeDb) / appState.dynamicRangeDb);
       
       // Map t to hue: 0 (red) for loud, 240 (blue) for quiet
       const hue = (1 - t) * 240;
