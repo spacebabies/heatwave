@@ -28,7 +28,7 @@ const PRESETS = {
 };
 
 // Choose active preset here
-const ACTIVE_PRESET = PRESETS.SEPARATED_SUBS;
+const ACTIVE_PRESET = PRESETS.SINGLE_SUB;
 
 // Room setup
 const room: RoomDimensions = { width: 40, height: 20 };
