@@ -6,6 +6,8 @@ export interface RoomDimensions {
 export interface SoundSource {
   x: number;
   y: number;
+  amplitude?: number;
+  phaseOffsetRadians?: number;
 }
 
 interface Complex {
