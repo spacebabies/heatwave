@@ -1,4 +1,6 @@
 import './style.css';
+import type { RoomDimensions, SoundSource } from './acousticModel';
+import { evaluateGrid } from './acousticModel';
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div style="font-family: monospace; font-size: 12px; margin-bottom: 8px;">sub: (1m, 1m)</div>
@@ -11,57 +13,15 @@ const ctx = canvas.getContext('2d')!;
 // Coordinate conversion mapping
 const PIXELS_PER_METER = 20;
 
-// Room dimensions in meters
-const ROOM_WIDTH_METERS = 40;
-const ROOM_HEIGHT_METERS = 20;
-
-// Subwoofer position in meters (origin bottom-left)
-const SUB_X_METERS = 1;
-const SUB_Y_METERS = 1;
+// Room setup
+const room: RoomDimensions = { width: 40, height: 20 };
+const sources: SoundSource[] = [{ x: 1, y: 1 }];
 
 // Convert room coordinates (meters, bottom-left origin) to canvas coordinates (pixels, top-left origin)
 function metersToPixels(xMeters: number, yMeters: number) {
   const xPx = xMeters * PIXELS_PER_METER;
-  const yPx = (ROOM_HEIGHT_METERS - yMeters) * PIXELS_PER_METER;
+  const yPx = (room.height - yMeters) * PIXELS_PER_METER;
   return { x: xPx, y: yPx };
-}
-
-// --- Acoustic Calculation ---
-
-function calculateSPL(xMeters: number, yMeters: number, sourceXMeters: number, sourceYMeters: number): number {
-  const dx = xMeters - sourceXMeters;
-  const dy = yMeters - sourceYMeters;
-  let d = Math.sqrt(dx * dx + dy * dy);
-  d = Math.max(0.1, d); // Clamp min distance to avoid singularities
-  
-  // Standard distance attenuation: -20 * log10(d)
-  return -20 * Math.log10(d);
-}
-
-function generateAcousticData(cols: number, rows: number, cellSizePx: number) {
-  const data = new Float32Array(cols * rows);
-  let maxSPL = -Infinity;
-  
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
-      // Find center pixel of the grid cell
-      const px = col * cellSizePx + cellSizePx / 2;
-      const py = row * cellSizePx + cellSizePx / 2;
-      
-      // Convert to room coordinates
-      const xMeters = px / PIXELS_PER_METER;
-      const yMeters = ROOM_HEIGHT_METERS - (py / PIXELS_PER_METER);
-      
-      const spl = calculateSPL(xMeters, yMeters, SUB_X_METERS, SUB_Y_METERS);
-      data[row * cols + col] = spl;
-      
-      if (spl > maxSPL) {
-        maxSPL = spl;
-      }
-    }
-  }
-  
-  return { data, maxSPL };
 }
 
 // --- Rendering ---
@@ -72,7 +32,7 @@ function drawHeatmap() {
   const rows = Math.ceil(canvas.height / CELL_SIZE_PX);
   
   // 1. Run simulation step
-  const { data, maxSPL } = generateAcousticData(cols, rows, CELL_SIZE_PX);
+  const { data, maxSPL } = evaluateGrid(room, sources, cols, rows, CELL_SIZE_PX, PIXELS_PER_METER);
   
   // 2. Render data
   const DYNAMIC_RANGE_DB = 50; // Show a 50dB range
@@ -102,23 +62,25 @@ function drawRoom() {
   drawHeatmap();
 
   // Convert room dimensions to pixels
-  const widthPx = ROOM_WIDTH_METERS * PIXELS_PER_METER;
-  const heightPx = ROOM_HEIGHT_METERS * PIXELS_PER_METER;
+  const widthPx = room.width * PIXELS_PER_METER;
+  const heightPx = room.height * PIXELS_PER_METER;
 
   // Draw room outline on top
   ctx.strokeStyle = '#333';
   ctx.lineWidth = 2;
   ctx.strokeRect(0, 0, widthPx, heightPx);
 
-  // Draw subwoofer marker on top
-  const subPos = metersToPixels(SUB_X_METERS, SUB_Y_METERS);
-  
+  // Draw subwoofer markers on top
   ctx.fillStyle = 'red';
   ctx.strokeStyle = 'white'; // White border to stand out against the red heatmap
   ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.fillRect(subPos.x - 5, subPos.y - 5, 10, 10);
-  ctx.strokeRect(subPos.x - 5, subPos.y - 5, 10, 10);
+  
+  for (const source of sources) {
+    const subPos = metersToPixels(source.x, source.y);
+    ctx.beginPath();
+    ctx.fillRect(subPos.x - 5, subPos.y - 5, 10, 10);
+    ctx.strokeRect(subPos.x - 5, subPos.y - 5, 10, 10);
+  }
 }
 
 drawRoom();
