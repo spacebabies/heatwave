@@ -69,6 +69,12 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <label>X (m): <input type="number" id="sub2X" value="${appState.sub2X}" style="width: 60px" step="0.1"></label><br/>
         <label>Y (m): <input type="number" id="sub2Y" value="${appState.sub2Y}" style="width: 60px" step="0.1"></label>
       </div>
+      <div>
+        <strong>Heights & Display</strong><br/>
+        <label>Listener Height (m): <input type="number" id="listenerHeightM" value="${appState.listenerHeightM}" style="width: 60px" step="0.1"></label><br/>
+        <label>Sub Height (m): <input type="number" id="defaultSourceHeightM" value="${appState.defaultSourceHeightM}" style="width: 60px" step="0.1"></label><br/>
+        <label>Range (dB): <input type="number" id="dynamicRangeDb" value="${appState.dynamicRangeDb}" style="width: 60px" step="1"></label>
+      </div>
     </div>
     
     <div style="display: flex; gap: 24px;">
@@ -85,7 +91,8 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     </div>
 
     <div style="font-size: 12px; color: #555;">
-      <em>Reflection coefficient examples: Glass ~0.95, Parquet / Hardwood ~0.90, Concrete / Hard drywall ~0.80</em>
+      Note: These coefficients are rough starting points, not absolute material constants.<br/>
+      Examples: Glass ~0.95, Parquet/Hardwood ~0.90, Concrete/Hard drywall ~0.80
     </div>
   </div>
 `;
@@ -225,6 +232,10 @@ wireNumber('wallReflectionCoefficient', 'wallReflectionCoefficient', 0, 1);
 
 wireCheckbox('enableFloorReflection', 'enableFloorReflection');
 wireNumber('floorReflectionCoefficient', 'floorReflectionCoefficient', 0, 1);
+
+wireNumber('listenerHeightM', 'listenerHeightM', 0, 20); // Clamp listener to room height
+wireNumber('defaultSourceHeightM', 'defaultSourceHeightM', 0, 20); // Clamp source height to room height
+wireNumber('dynamicRangeDb', 'dynamicRangeDb', 10, 120); // Clamp dB range 10-120
 
 // Initial render
 render();
