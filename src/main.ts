@@ -96,38 +96,35 @@ const ctx = canvas.getContext('2d')!;
 // Coordinate conversion mapping
 const PIXELS_PER_METER = 20;
 
-// Derive simulation inputs from app state
-const room: RoomDimensions = { width: appState.roomWidthM, height: appState.roomHeightM };
-
-const sources: SoundSource[] = [];
-if (appState.sub1Enabled) {
-  sources.push({ x: appState.sub1X, y: appState.sub1Y, z: appState.sub1Z });
-}
-if (appState.sub2Enabled) {
-  sources.push({ x: appState.sub2X, y: appState.sub2Y, z: appState.sub2Z });
-}
-
-const acousticSettings: AcousticSettings = {
-  frequency: appState.frequency,
-  speedOfSound: appState.speedOfSound,
-  wallReflectionCoefficient: appState.wallReflectionCoefficient,
-  floorReflectionCoefficient: appState.floorReflectionCoefficient,
-  enableWallReflections: appState.enableWallReflections,
-  enableFloorReflection: appState.enableFloorReflection,
-  listenerHeightM: appState.listenerHeightM,
-  defaultSourceHeightM: appState.defaultSourceHeightM,
-};
-
-// Convert room coordinates (meters, bottom-left origin) to canvas coordinates (pixels, top-left origin)
-function metersToPixels(xMeters: number, yMeters: number) {
-  const xPx = xMeters * PIXELS_PER_METER;
-  const yPx = (room.height - yMeters) * PIXELS_PER_METER;
-  return { x: xPx, y: yPx };
-}
-
 // --- Rendering ---
 
-function drawHeatmap() {
+function render() {
+  // Derive simulation inputs from app state
+  const room: RoomDimensions = { width: appState.roomWidthM, height: appState.roomHeightM };
+
+  const sources: SoundSource[] = [];
+  if (appState.sub1Enabled) {
+    sources.push({ x: appState.sub1X, y: appState.sub1Y, z: appState.sub1Z });
+  }
+  if (appState.sub2Enabled) {
+    sources.push({ x: appState.sub2X, y: appState.sub2Y, z: appState.sub2Z });
+  }
+
+  const acousticSettings: AcousticSettings = {
+    frequency: appState.frequency,
+    speedOfSound: appState.speedOfSound,
+    wallReflectionCoefficient: appState.wallReflectionCoefficient,
+    floorReflectionCoefficient: appState.floorReflectionCoefficient,
+    enableWallReflections: appState.enableWallReflections,
+    enableFloorReflection: appState.enableFloorReflection,
+    listenerHeightM: appState.listenerHeightM,
+    defaultSourceHeightM: appState.defaultSourceHeightM,
+  };
+
+  // Clear canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw heatmap base
   const CELL_SIZE_PX = 4; // Coarse grid for rendering performance
   const cols = Math.ceil(canvas.width / CELL_SIZE_PX);
   const rows = Math.ceil(canvas.height / CELL_SIZE_PX);
@@ -151,14 +148,6 @@ function drawHeatmap() {
       ctx.fillRect(col * CELL_SIZE_PX, row * CELL_SIZE_PX, CELL_SIZE_PX, CELL_SIZE_PX);
     }
   }
-}
-
-function drawRoom() {
-  // Clear canvas
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Draw heatmap base
-  drawHeatmap();
 
   // Convert room dimensions to pixels
   const widthPx = room.width * PIXELS_PER_METER;
@@ -175,11 +164,67 @@ function drawRoom() {
   ctx.lineWidth = 1;
   
   for (const source of sources) {
-    const subPos = metersToPixels(source.x, source.y);
+    const xPx = source.x * PIXELS_PER_METER;
+    const yPx = (room.height - source.y) * PIXELS_PER_METER;
     ctx.beginPath();
-    ctx.fillRect(subPos.x - 5, subPos.y - 5, 10, 10);
-    ctx.strokeRect(subPos.x - 5, subPos.y - 5, 10, 10);
+    ctx.fillRect(xPx - 5, yPx - 5, 10, 10);
+    ctx.strokeRect(xPx - 5, yPx - 5, 10, 10);
   }
 }
 
-drawRoom();
+// --- Wire Controls ---
+
+function wireCheckbox(id: string, stateKey: keyof AppState) {
+  const el = document.getElementById(id) as HTMLInputElement;
+  if (!el) return;
+  el.addEventListener('change', () => {
+    (appState as any)[stateKey] = el.checked;
+    render();
+  });
+}
+
+function wireNumber(id: string, stateKey: keyof AppState, min?: number, max?: number) {
+  const el = document.getElementById(id) as HTMLInputElement;
+  if (!el) return;
+  el.addEventListener('input', () => {
+    const val = parseFloat(el.value);
+    if (!isNaN(val)) {
+      let finalVal = val;
+      
+      // Enforce bounds
+      if (min !== undefined && finalVal < min) finalVal = min;
+      if (max !== undefined && finalVal > max) finalVal = max;
+      
+      // Enforce room limits for coordinates
+      if (stateKey.endsWith('X')) {
+        if (finalVal < 0) finalVal = 0;
+        if (finalVal > appState.roomWidthM) finalVal = appState.roomWidthM;
+      }
+      if (stateKey.endsWith('Y')) {
+        if (finalVal < 0) finalVal = 0;
+        if (finalVal > appState.roomHeightM) finalVal = appState.roomHeightM;
+      }
+      
+      (appState as any)[stateKey] = finalVal;
+      render();
+    }
+  });
+}
+
+// Attach event listeners
+wireCheckbox('sub1Enabled', 'sub1Enabled');
+wireNumber('sub1X', 'sub1X');
+wireNumber('sub1Y', 'sub1Y');
+
+wireCheckbox('sub2Enabled', 'sub2Enabled');
+wireNumber('sub2X', 'sub2X');
+wireNumber('sub2Y', 'sub2Y');
+
+wireCheckbox('enableWallReflections', 'enableWallReflections');
+wireNumber('wallReflectionCoefficient', 'wallReflectionCoefficient', 0, 1);
+
+wireCheckbox('enableFloorReflection', 'enableFloorReflection');
+wireNumber('floorReflectionCoefficient', 'floorReflectionCoefficient', 0, 1);
+
+// Initial render
+render();
