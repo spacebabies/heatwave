@@ -8,18 +8,44 @@ export interface SoundSource {
   y: number;
 }
 
+interface Complex {
+  re: number;
+  im: number;
+}
+
+// Acoustic constants
+const SPEED_OF_SOUND = 343.0; // m/s at ~20°C
+const FREQUENCY = 63.0; // Hz
+const WAVE_NUMBER = (2 * Math.PI * FREQUENCY) / SPEED_OF_SOUND;
+
 export function samplePointSPL(xMeters: number, yMeters: number, sources: SoundSource[]): number {
   if (sources.length === 0) return -Infinity;
   
-  // For now, to preserve current exact output, just evaluate the first source
-  const source = sources[0];
-  const dx = xMeters - source.x;
-  const dy = yMeters - source.y;
-  let d = Math.sqrt(dx * dx + dy * dy);
-  d = Math.max(0.1, d); // Clamp min distance to avoid singularities
+  let totalPressure: Complex = { re: 0, im: 0 };
+
+  for (const source of sources) {
+    const dx = xMeters - source.x;
+    const dy = yMeters - source.y;
+    let r = Math.sqrt(dx * dx + dy * dy);
+    r = Math.max(0.1, r); // Clamp min distance to avoid singularities
+    
+    // Complex pressure: p = (1 / r) * exp(-j * k * r)
+    // where exp(-j * phi) = cos(-phi) + j * sin(-phi) = cos(phi) - j * sin(phi)
+    // Let phi = k * r
+    const amplitude = 1 / r;
+    const phase = -WAVE_NUMBER * r;
+    
+    totalPressure.re += amplitude * Math.cos(phase);
+    totalPressure.im += amplitude * Math.sin(phase);
+  }
   
-  // Standard distance attenuation: -20 * log10(d)
-  return -20 * Math.log10(d);
+  // Magnitude of complex pressure
+  const magnitude = Math.sqrt(totalPressure.re * totalPressure.re + totalPressure.im * totalPressure.im);
+  
+  // SPL in relative dB
+  // Note: Since amplitude is proportional to 1/r, the 20 * log10(magnitude) still equates 
+  // to -20 * log10(r) for a single source, preserving the same relative scale.
+  return 20 * Math.log10(magnitude);
 }
 
 export function evaluateGrid(
