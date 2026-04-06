@@ -53,40 +53,64 @@ const appState: AppState = {
   dynamicRangeDb: 50,
 };
 
+// --- UI Helpers ---
+
+function createCheckbox(label: string, stateKey: keyof AppState) {
+  const isChecked = appState[stateKey] as boolean;
+  return `
+    <label>
+      <input type="checkbox" id="${stateKey}" ${isChecked ? 'checked' : ''}>
+      ${label}
+    </label><br/>
+  `;
+}
+
+function createNumberInput(label: string, stateKey: keyof AppState, step: string) {
+  const value = appState[stateKey] as number;
+  return `
+    <label>
+      ${label}: 
+      <input type="number" id="${stateKey}" value="${value}" style="width: 60px" step="${step}">
+    </label><br/>
+  `;
+}
+
+// --- DOM Setup ---
+
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <canvas id="roomCanvas" width="800" height="400"></canvas>
   <div id="controls" style="margin-top: 16px; display: flex; flex-direction: column; gap: 12px; font-family: sans-serif; font-size: 14px; max-width: 800px; text-align: left;">
     <div style="display: flex; gap: 24px; padding-bottom: 12px; border-bottom: 1px solid #ccc;">
       <div>
         <strong>Sub 1</strong><br/>
-        <label><input type="checkbox" id="sub1Enabled" ${appState.sub1Enabled ? 'checked' : ''}> Enabled</label><br/>
-        <label>X (m): <input type="number" id="sub1X" value="${appState.sub1X}" style="width: 60px" step="0.1"></label><br/>
-        <label>Y (m): <input type="number" id="sub1Y" value="${appState.sub1Y}" style="width: 60px" step="0.1"></label>
+        ${createCheckbox('Enabled', 'sub1Enabled')}
+        ${createNumberInput('X (m)', 'sub1X', '0.1')}
+        ${createNumberInput('Y (m)', 'sub1Y', '0.1')}
       </div>
       <div>
         <strong>Sub 2</strong><br/>
-        <label><input type="checkbox" id="sub2Enabled" ${appState.sub2Enabled ? 'checked' : ''}> Enabled</label><br/>
-        <label>X (m): <input type="number" id="sub2X" value="${appState.sub2X}" style="width: 60px" step="0.1"></label><br/>
-        <label>Y (m): <input type="number" id="sub2Y" value="${appState.sub2Y}" style="width: 60px" step="0.1"></label>
+        ${createCheckbox('Enabled', 'sub2Enabled')}
+        ${createNumberInput('X (m)', 'sub2X', '0.1')}
+        ${createNumberInput('Y (m)', 'sub2Y', '0.1')}
       </div>
       <div>
         <strong>Heights & Display</strong><br/>
-        <label>Listener Height (m): <input type="number" id="listenerHeightM" value="${appState.listenerHeightM}" style="width: 60px" step="0.1"></label><br/>
-        <label>Sub Height (m): <input type="number" id="defaultSourceHeightM" value="${appState.defaultSourceHeightM}" style="width: 60px" step="0.1"></label><br/>
-        <label>Range (dB): <input type="number" id="dynamicRangeDb" value="${appState.dynamicRangeDb}" style="width: 60px" step="1"></label>
+        ${createNumberInput('Listener Height (m)', 'listenerHeightM', '0.1')}
+        ${createNumberInput('Sub Height (m)', 'defaultSourceHeightM', '0.1')}
+        ${createNumberInput('Range (dB)', 'dynamicRangeDb', '1')}
       </div>
     </div>
     
     <div style="display: flex; gap: 24px;">
       <div>
         <strong>Wall Reflections</strong><br/>
-        <label><input type="checkbox" id="enableWallReflections" ${appState.enableWallReflections ? 'checked' : ''}> Enabled</label><br/>
-        <label>Coefficient: <input type="number" id="wallReflectionCoefficient" value="${appState.wallReflectionCoefficient}" style="width: 60px" step="0.1" min="0" max="1"></label>
+        ${createCheckbox('Enabled', 'enableWallReflections')}
+        ${createNumberInput('Coefficient', 'wallReflectionCoefficient', '0.1')}
       </div>
       <div>
         <strong>Floor Reflection</strong><br/>
-        <label><input type="checkbox" id="enableFloorReflection" ${appState.enableFloorReflection ? 'checked' : ''}> Enabled</label><br/>
-        <label>Coefficient: <input type="number" id="floorReflectionCoefficient" value="${appState.floorReflectionCoefficient}" style="width: 60px" step="0.1" min="0" max="1"></label>
+        ${createCheckbox('Enabled', 'enableFloorReflection')}
+        ${createNumberInput('Coefficient', 'floorReflectionCoefficient', '0.1')}
       </div>
     </div>
 
@@ -99,16 +123,11 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
 
 const canvas = document.getElementById('roomCanvas') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d')!;
-
-// Coordinate conversion mapping
 const PIXELS_PER_METER = 20;
 
-// --- Rendering ---
+// --- State Extractors ---
 
-function render() {
-  // Derive simulation inputs from app state
-  const room: RoomDimensions = { width: appState.roomWidthM, height: appState.roomHeightM };
-
+function buildActiveSources(): SoundSource[] {
   const sources: SoundSource[] = [];
   if (appState.sub1Enabled) {
     sources.push({ x: appState.sub1X, y: appState.sub1Y, z: appState.sub1Z });
@@ -116,8 +135,11 @@ function render() {
   if (appState.sub2Enabled) {
     sources.push({ x: appState.sub2X, y: appState.sub2Y, z: appState.sub2Z });
   }
+  return sources;
+}
 
-  const acousticSettings: AcousticSettings = {
+function buildAcousticSettings(): AcousticSettings {
+  return {
     frequency: appState.frequency,
     speedOfSound: appState.speedOfSound,
     wallReflectionCoefficient: appState.wallReflectionCoefficient,
@@ -127,6 +149,14 @@ function render() {
     listenerHeightM: appState.listenerHeightM,
     defaultSourceHeightM: appState.defaultSourceHeightM,
   };
+}
+
+// --- Rendering ---
+
+function render() {
+  const room: RoomDimensions = { width: appState.roomWidthM, height: appState.roomHeightM };
+  const sources = buildActiveSources();
+  const settings = buildAcousticSettings();
 
   // Clear canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -137,7 +167,7 @@ function render() {
   const rows = Math.ceil(canvas.height / CELL_SIZE_PX);
   
   // 1. Run simulation step
-  const { data, maxSPL } = evaluateGrid(room, sources, acousticSettings, cols, rows, CELL_SIZE_PX, PIXELS_PER_METER);
+  const { data, maxSPL } = evaluateGrid(room, sources, settings, cols, rows, CELL_SIZE_PX, PIXELS_PER_METER);
   
   // 2. Render data
   for (let row = 0; row < rows; row++) {
@@ -156,18 +186,16 @@ function render() {
     }
   }
 
-  // Convert room dimensions to pixels
+  // Draw room outline on top
   const widthPx = room.width * PIXELS_PER_METER;
   const heightPx = room.height * PIXELS_PER_METER;
-
-  // Draw room outline on top
   ctx.strokeStyle = '#333';
   ctx.lineWidth = 2;
   ctx.strokeRect(0, 0, widthPx, heightPx);
 
   // Draw subwoofer markers on top
   ctx.fillStyle = 'red';
-  ctx.strokeStyle = 'white'; // White border to stand out against the red heatmap
+  ctx.strokeStyle = 'white';
   ctx.lineWidth = 1;
   
   for (const source of sources) {
@@ -181,8 +209,8 @@ function render() {
 
 // --- Wire Controls ---
 
-function wireCheckbox(id: string, stateKey: keyof AppState) {
-  const el = document.getElementById(id) as HTMLInputElement;
+function wireCheckbox(stateKey: keyof AppState) {
+  const el = document.getElementById(stateKey) as HTMLInputElement;
   if (!el) return;
   el.addEventListener('change', () => {
     (appState as any)[stateKey] = el.checked;
@@ -190,8 +218,8 @@ function wireCheckbox(id: string, stateKey: keyof AppState) {
   });
 }
 
-function wireNumber(id: string, stateKey: keyof AppState, min?: number, max?: number) {
-  const el = document.getElementById(id) as HTMLInputElement;
+function wireNumber(stateKey: keyof AppState, min?: number, max?: number) {
+  const el = document.getElementById(stateKey) as HTMLInputElement;
   if (!el) return;
   el.addEventListener('input', () => {
     const val = parseFloat(el.value);
@@ -219,23 +247,23 @@ function wireNumber(id: string, stateKey: keyof AppState, min?: number, max?: nu
 }
 
 // Attach event listeners
-wireCheckbox('sub1Enabled', 'sub1Enabled');
-wireNumber('sub1X', 'sub1X');
-wireNumber('sub1Y', 'sub1Y');
+wireCheckbox('sub1Enabled');
+wireNumber('sub1X');
+wireNumber('sub1Y');
 
-wireCheckbox('sub2Enabled', 'sub2Enabled');
-wireNumber('sub2X', 'sub2X');
-wireNumber('sub2Y', 'sub2Y');
+wireCheckbox('sub2Enabled');
+wireNumber('sub2X');
+wireNumber('sub2Y');
 
-wireCheckbox('enableWallReflections', 'enableWallReflections');
-wireNumber('wallReflectionCoefficient', 'wallReflectionCoefficient', 0, 1);
+wireCheckbox('enableWallReflections');
+wireNumber('wallReflectionCoefficient', 0, 1);
 
-wireCheckbox('enableFloorReflection', 'enableFloorReflection');
-wireNumber('floorReflectionCoefficient', 'floorReflectionCoefficient', 0, 1);
+wireCheckbox('enableFloorReflection');
+wireNumber('floorReflectionCoefficient', 0, 1);
 
-wireNumber('listenerHeightM', 'listenerHeightM', 0, 20); // Clamp listener to room height
-wireNumber('defaultSourceHeightM', 'defaultSourceHeightM', 0, 20); // Clamp source height to room height
-wireNumber('dynamicRangeDb', 'dynamicRangeDb', 10, 120); // Clamp dB range 10-120
+wireNumber('listenerHeightM', 0, 20); // Clamp listener to room height
+wireNumber('defaultSourceHeightM', 0, 20); // Clamp source height to room height
+wireNumber('dynamicRangeDb', 10, 120); // Clamp dB range 10-120
 
 // Initial render
 render();
