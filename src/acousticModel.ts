@@ -6,6 +6,7 @@ export interface RoomDimensions {
 export interface SoundSource {
   x: number;
   y: number;
+  z?: number;
   amplitude?: number;
   phaseOffsetRadians?: number;
 }
@@ -20,20 +21,27 @@ const SPEED_OF_SOUND = 343.0; // m/s at ~20°C
 const FREQUENCY = 63.0; // Hz
 const WAVE_NUMBER = (2 * Math.PI * FREQUENCY) / SPEED_OF_SOUND;
 const WALL_REFLECTION_COEFFICIENT = 0.8;
+const FLOOR_REFLECTION_COEFFICIENT = 0.8;
+const ENABLE_FLOOR_REFLECTION = true; // Easy toggle for A/B checking
+const DEFAULT_SOURCE_HEIGHT_M = 0.5; // Typical subwoofer acoustic center height
+const LISTENER_HEIGHT_M = 1.5; // Typical standing ear height
 
 function addPathContribution(
   totalPressure: Complex,
   xMeters: number,
   yMeters: number,
+  listenerZ: number,
   srcX: number,
   srcY: number,
+  srcZ: number,
   srcAmp: number,
   srcPhase: number,
   reflectionGain: number
 ) {
   const dx = xMeters - srcX;
   const dy = yMeters - srcY;
-  let r = Math.sqrt(dx * dx + dy * dy);
+  const dz = listenerZ - srcZ;
+  let r = Math.sqrt(dx * dx + dy * dy + dz * dz);
   r = Math.max(0.1, r); // Clamp min distance to avoid singularities
   
   // Complex pressure: p = (A / r) * exp(j * (-k * r + phaseOffset))
@@ -52,22 +60,28 @@ export function samplePointSPL(xMeters: number, yMeters: number, sources: SoundS
   for (const source of sources) {
     const srcAmp = source.amplitude ?? 1.0;
     const srcPhase = source.phaseOffsetRadians ?? 0.0;
+    const srcZ = source.z ?? DEFAULT_SOURCE_HEIGHT_M;
     
     // Direct path
-    addPathContribution(totalPressure, xMeters, yMeters, source.x, source.y, srcAmp, srcPhase, 1.0);
+    addPathContribution(totalPressure, xMeters, yMeters, LISTENER_HEIGHT_M, source.x, source.y, srcZ, srcAmp, srcPhase, 1.0);
     
-    // First-order reflections (image sources)
+    // Floor reflection (image source vertically mirrored across z = 0)
+    if (ENABLE_FLOOR_REFLECTION) {
+      addPathContribution(totalPressure, xMeters, yMeters, LISTENER_HEIGHT_M, source.x, source.y, -srcZ, srcAmp, srcPhase, FLOOR_REFLECTION_COEFFICIENT);
+    }
+    
+    // First-order wall reflections (image sources in plan view, using true source height)
     // Left wall (x = 0)
-    addPathContribution(totalPressure, xMeters, yMeters, -source.x, source.y, srcAmp, srcPhase, WALL_REFLECTION_COEFFICIENT);
+    addPathContribution(totalPressure, xMeters, yMeters, LISTENER_HEIGHT_M, -source.x, source.y, srcZ, srcAmp, srcPhase, WALL_REFLECTION_COEFFICIENT);
     
     // Right wall (x = room.width)
-    addPathContribution(totalPressure, xMeters, yMeters, 2 * room.width - source.x, source.y, srcAmp, srcPhase, WALL_REFLECTION_COEFFICIENT);
+    addPathContribution(totalPressure, xMeters, yMeters, LISTENER_HEIGHT_M, 2 * room.width - source.x, source.y, srcZ, srcAmp, srcPhase, WALL_REFLECTION_COEFFICIENT);
     
     // Bottom wall (y = 0)
-    addPathContribution(totalPressure, xMeters, yMeters, source.x, -source.y, srcAmp, srcPhase, WALL_REFLECTION_COEFFICIENT);
+    addPathContribution(totalPressure, xMeters, yMeters, LISTENER_HEIGHT_M, source.x, -source.y, srcZ, srcAmp, srcPhase, WALL_REFLECTION_COEFFICIENT);
     
     // Top wall (y = room.height)
-    addPathContribution(totalPressure, xMeters, yMeters, source.x, 2 * room.height - source.y, srcAmp, srcPhase, WALL_REFLECTION_COEFFICIENT);
+    addPathContribution(totalPressure, xMeters, yMeters, LISTENER_HEIGHT_M, source.x, 2 * room.height - source.y, srcZ, srcAmp, srcPhase, WALL_REFLECTION_COEFFICIENT);
   }
   
   // Magnitude of complex pressure
