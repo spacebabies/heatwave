@@ -26,26 +26,99 @@ function metersToPixels(xMeters: number, yMeters: number) {
   return { x: xPx, y: yPx };
 }
 
+// --- Acoustic Calculation ---
+
+function calculateSPL(xMeters: number, yMeters: number, sourceXMeters: number, sourceYMeters: number): number {
+  const dx = xMeters - sourceXMeters;
+  const dy = yMeters - sourceYMeters;
+  let d = Math.sqrt(dx * dx + dy * dy);
+  d = Math.max(0.1, d); // Clamp min distance to avoid singularities
+  
+  // Standard distance attenuation: -20 * log10(d)
+  return -20 * Math.log10(d);
+}
+
+function generateAcousticData(cols: number, rows: number, cellSizePx: number) {
+  const data = new Float32Array(cols * rows);
+  let maxSPL = -Infinity;
+  
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      // Find center pixel of the grid cell
+      const px = col * cellSizePx + cellSizePx / 2;
+      const py = row * cellSizePx + cellSizePx / 2;
+      
+      // Convert to room coordinates
+      const xMeters = px / PIXELS_PER_METER;
+      const yMeters = ROOM_HEIGHT_METERS - (py / PIXELS_PER_METER);
+      
+      const spl = calculateSPL(xMeters, yMeters, SUB_X_METERS, SUB_Y_METERS);
+      data[row * cols + col] = spl;
+      
+      if (spl > maxSPL) {
+        maxSPL = spl;
+      }
+    }
+  }
+  
+  return { data, maxSPL };
+}
+
+// --- Rendering ---
+
+function drawHeatmap() {
+  const CELL_SIZE_PX = 4; // Coarse grid for rendering performance
+  const cols = Math.ceil(canvas.width / CELL_SIZE_PX);
+  const rows = Math.ceil(canvas.height / CELL_SIZE_PX);
+  
+  // 1. Run simulation step
+  const { data, maxSPL } = generateAcousticData(cols, rows, CELL_SIZE_PX);
+  
+  // 2. Render data
+  const DYNAMIC_RANGE_DB = 50; // Show a 50dB range
+  
+  for (let row = 0; row < rows; row++) {
+    for (let col = 0; col < cols; col++) {
+      const spl = data[row * cols + col];
+      const relativeSPL = spl - maxSPL; // 0 at max, negative elsewhere
+      
+      // Map relative SPL to [0, 1] for coloring
+      const t = Math.max(0, (relativeSPL + DYNAMIC_RANGE_DB) / DYNAMIC_RANGE_DB);
+      
+      // Map t to hue: 0 (red) for loud, 240 (blue) for quiet
+      const hue = (1 - t) * 240;
+      
+      ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+      ctx.fillRect(col * CELL_SIZE_PX, row * CELL_SIZE_PX, CELL_SIZE_PX, CELL_SIZE_PX);
+    }
+  }
+}
+
 function drawRoom() {
   // Clear canvas
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Draw heatmap base
+  drawHeatmap();
 
   // Convert room dimensions to pixels
   const widthPx = ROOM_WIDTH_METERS * PIXELS_PER_METER;
   const heightPx = ROOM_HEIGHT_METERS * PIXELS_PER_METER;
 
-  // Draw room outline
+  // Draw room outline on top
   ctx.strokeStyle = '#333';
   ctx.lineWidth = 2;
   ctx.strokeRect(0, 0, widthPx, heightPx);
 
-  // Draw subwoofer
+  // Draw subwoofer marker on top
   const subPos = metersToPixels(SUB_X_METERS, SUB_Y_METERS);
   
   ctx.fillStyle = 'red';
+  ctx.strokeStyle = 'white'; // White border to stand out against the red heatmap
+  ctx.lineWidth = 1;
   ctx.beginPath();
-  // Draw a 10x10 square centered at the coordinate
   ctx.fillRect(subPos.x - 5, subPos.y - 5, 10, 10);
+  ctx.strokeRect(subPos.x - 5, subPos.y - 5, 10, 10);
 }
 
 drawRoom();
