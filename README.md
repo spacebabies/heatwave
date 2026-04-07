@@ -22,11 +22,14 @@ We have evolved from a simple scalar distance-attenuation prototype to a fully i
     *   First-order floor reflection (vertical image source).
     *   Adjustable reflection coefficients for different boundary materials.
 *   **Interactive Control Panel:**
-    *   Unstyled HTML UI allowing real-time edits to the simulation.
-    *   Toggle multiple subwoofers (Sub 1 and Sub 2).
-    *   Edit subwoofer X/Y coordinates.
+    *   Unstyled HTML UI allowing live updates to the simulation.
+    *   Two editable subwoofers (Sub 1 and Sub 2) with X/Y coordinate controls.
+    *   Cardioid direction control for each subwoofer (0° = Up, 90° = Right, etc.).
     *   Adjust listener height, subwoofer height, and dynamic range of the heatmap.
-    *   Toggle boundary reflections on/off and edit their coefficients.
+    *   Toggle wall and floor reflections on/off and edit their amplitude coefficients.
+*   **Cardioid Directivity:**
+    *   Uses a horizontal 2D directional cardioid approximation in the simulator: `gain = 0.5 * (1 + cos(delta))`.
+    *   Does not model full manufacturer-specific internal enclosure geometry or delay offsets.
 *   **Heatmap Rendering:**
     *   Maps the computed dynamic range to an HSL color gradient: `0 dB` (peak) maps to red, and `-XX dB` maps to blue.
 
@@ -38,12 +41,11 @@ We have evolved from a simple scalar distance-attenuation prototype to a fully i
 
 ## To Do
 
-- **Vertical Stacking & Arrays:** Add better support for vertically stacked subwoofers (explicit array visualization or full Z-coordinate inputs in the UI).
-- **Cardioid Subwoofers:** Add support for directional sources like cardioid subs (e.g., d&b B4), either via mathematical directivity functions or modeling internal driver offsets and delays.
 - Frequency-agnostic solver (allow changing the frequency dynamically).
 - Add ceiling reflection.
 - Support absolute calibrated SPL.
 - Enhance the UI styling (if deemed necessary).
+- **Vertical Stacking & Arrays:** Explore support for vertically stacked subwoofers (explicit array visualization or full Z-coordinate inputs in the UI) at a later stage.
 
 ## Why the project is being built this way
 
