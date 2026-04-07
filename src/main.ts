@@ -189,73 +189,77 @@ function buildAcousticSettings(): AcousticSettings {
 
 // --- Rendering ---
 
-function render() {
+function renderToContext(
+  targetCtx: CanvasRenderingContext2D,
+  canvasWidth: number,
+  canvasHeight: number,
+  pixelsPerMeter: number,
+  cellSizePx: number,
+  isExport: boolean
+) {
   const room: RoomDimensions = { width: appState.roomWidthM, height: appState.roomHeightM };
   const sources = buildActiveSources();
   const settings = buildAcousticSettings();
 
-  // Clear canvas
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (!isExport) {
+    targetCtx.clearRect(0, 0, canvasWidth, canvasHeight);
+  }
 
-  // Draw heatmap base
-  const CELL_SIZE_PX = 4; // Coarse grid for rendering performance
-  const cols = Math.ceil(canvas.width / CELL_SIZE_PX);
-  const rows = Math.ceil(canvas.height / CELL_SIZE_PX);
+  const cols = Math.ceil(canvasWidth / cellSizePx);
+  const rows = Math.ceil(canvasHeight / cellSizePx);
 
-  // 1. Run simulation step
-  const { data, maxSPL } = evaluateGrid(room, sources, settings, cols, rows, CELL_SIZE_PX, PIXELS_PER_METER);
+  const { data, maxSPL } = evaluateGrid(room, sources, settings, cols, rows, cellSizePx, pixelsPerMeter);
 
-  // 2. Render data
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       const spl = data[row * cols + col];
-      const relativeSPL = spl - maxSPL; // 0 at max, negative elsewhere
+      const relativeSPL = spl - maxSPL;
 
-      // Map relative SPL to [0, 1] for coloring
       const t = Math.max(0, (relativeSPL + appState.dynamicRangeDb) / appState.dynamicRangeDb);
-
-      // Map t to hue: 0 (red) for loud, 240 (blue) for quiet
       const hue = (1 - t) * 240;
 
-      ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
-      ctx.fillRect(col * CELL_SIZE_PX, row * CELL_SIZE_PX, CELL_SIZE_PX, CELL_SIZE_PX);
+      targetCtx.fillStyle = `hsl(${hue}, 100%, 50%)`;
+      targetCtx.fillRect(col * cellSizePx, row * cellSizePx, cellSizePx, cellSizePx);
     }
   }
 
-  // Draw room outline on top
-  const widthPx = room.width * PIXELS_PER_METER;
-  const heightPx = room.height * PIXELS_PER_METER;
-  ctx.strokeStyle = '#333';
-  ctx.lineWidth = 2;
-  ctx.strokeRect(0, 0, widthPx, heightPx);
+  const widthPx = room.width * pixelsPerMeter;
+  const heightPx = room.height * pixelsPerMeter;
+  targetCtx.strokeStyle = '#333';
+  targetCtx.lineWidth = isExport ? 4 : 2;
+  targetCtx.strokeRect(0, 0, widthPx, heightPx);
 
-  // Draw subwoofer markers on top
-  ctx.fillStyle = 'red';
-  ctx.strokeStyle = 'white';
-  ctx.lineWidth = 1;
+  targetCtx.fillStyle = 'red';
+  targetCtx.strokeStyle = 'white';
+  
+  const markerSize = isExport ? 16 : 10;
+  const lineLength = isExport ? 20 : 10;
 
   for (const source of sources) {
-    const xPx = source.x * PIXELS_PER_METER;
-    const yPx = (room.height - source.y) * PIXELS_PER_METER;
-    ctx.beginPath();
-    ctx.fillRect(xPx - 5, yPx - 5, 10, 10);
-    ctx.strokeRect(xPx - 5, yPx - 5, 10, 10);
+    const xPx = source.x * pixelsPerMeter;
+    const yPx = (room.height - source.y) * pixelsPerMeter;
+    targetCtx.beginPath();
+    targetCtx.fillRect(xPx - markerSize / 2, yPx - markerSize / 2, markerSize, markerSize);
+    targetCtx.lineWidth = isExport ? 2 : 1;
+    targetCtx.strokeRect(xPx - markerSize / 2, yPx - markerSize / 2, markerSize, markerSize);
 
     if (source.cardioidEnabled) {
       const deg = source.directionDeg ?? 90;
       const rad = deg * Math.PI / 180;
-      // Canvas Y is down, so Up (0 deg) means negative Y
       const dx = Math.sin(rad);
       const dy = -Math.cos(rad);
 
-      ctx.beginPath();
-      ctx.moveTo(xPx, yPx);
-      ctx.lineTo(xPx + dx * 10, yPx + dy * 10);
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      ctx.lineWidth = 1; // reset for next marker
+      targetCtx.beginPath();
+      targetCtx.moveTo(xPx, yPx);
+      targetCtx.lineTo(xPx + dx * lineLength, yPx + dy * lineLength);
+      targetCtx.lineWidth = isExport ? 4 : 2;
+      targetCtx.stroke();
     }
   }
+}
+
+function render() {
+  renderToContext(ctx, canvas.width, canvas.height, PIXELS_PER_METER, 4, false);
 }
 
 // --- Wire Controls ---
@@ -357,16 +361,90 @@ function exportToPng() {
   exCtx.fillStyle = '#ffffff';
   exCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
 
-  // In the future, we can re-render a high-res acoustic grid directly into exCtx.
-  // For now, copy the current on-screen canvas to keep it simple.
-  const sourceCanvas = document.getElementById('roomCanvas') as HTMLCanvasElement;
-  
   const marginX = 50;
   const marginY = 50;
   const drawWidth = exportCanvas.width - marginX * 2;
-  const drawHeight = (sourceCanvas.height / sourceCanvas.width) * drawWidth;
+  const pixelsPerMeter = drawWidth / appState.roomWidthM;
+  const drawHeight = appState.roomHeightM * pixelsPerMeter;
 
-  exCtx.drawImage(sourceCanvas, marginX, marginY, drawWidth, drawHeight);
+  exCtx.save();
+  exCtx.translate(marginX, marginY);
+  // Re-render high-res heatmap directly instead of copying the screen canvas
+  renderToContext(exCtx, drawWidth, drawHeight, pixelsPerMeter, 4, true);
+  exCtx.restore();
+
+  // --- Scale Bar (Bottom Left) ---
+  const scaleBarMeters = 10;
+  const scaleBarPixels = scaleBarMeters * pixelsPerMeter;
+  const scaleX = marginX;
+  const scaleY = exportCanvas.height - marginY - 40;
+
+  exCtx.strokeStyle = '#000000';
+  exCtx.fillStyle = '#000000';
+  exCtx.lineWidth = 2;
+  exCtx.font = '16px sans-serif';
+  exCtx.textAlign = 'center';
+  exCtx.textBaseline = 'top';
+
+  exCtx.beginPath();
+  exCtx.moveTo(scaleX, scaleY);
+  exCtx.lineTo(scaleX + scaleBarPixels, scaleY);
+  exCtx.stroke();
+
+  for (let m = 0; m <= scaleBarMeters; m += 5) {
+    const tickX = scaleX + m * pixelsPerMeter;
+    exCtx.beginPath();
+    exCtx.moveTo(tickX, scaleY - 10);
+    exCtx.lineTo(tickX, scaleY + 10);
+    exCtx.stroke();
+    exCtx.fillText(`${m} m`, tickX, scaleY + 15);
+  }
+
+  // --- Title Block (Bottom Right) ---
+  function formatNum(n: number) { return Number(n.toFixed(2)); }
+  
+  const titleLines: string[] = [
+    `Project: ${appState.projectName}`,
+    `Date: ${new Date().toLocaleDateString()}`,
+    `Room: ${formatNum(appState.roomWidthM)}m x ${formatNum(appState.roomHeightM)}m`,
+    `Frequency: ${formatNum(appState.frequency)} Hz`,
+    `Wall Reflection: ${appState.enableWallReflections ? formatNum(appState.wallReflectionAmplitude) : 'Off'}`,
+    `Floor Reflection: ${appState.enableFloorReflection ? formatNum(appState.floorReflectionAmplitude) : 'Off'}`,
+    `Listener Height: ${formatNum(appState.listenerHeightM)} m`,
+    `Sub Height: ${formatNum(appState.defaultSourceHeightM)} m`,
+    `Dynamic Range: ${formatNum(appState.dynamicRangeDb)} dB`,
+    '',
+    'Subwoofers:'
+  ];
+
+  if (appState.sub1Enabled) {
+    const mode = appState.sub1CardioidEnabled ? `Cardioid (${formatNum(appState.sub1DirectionDeg)}°)` : 'Omni';
+    titleLines.push(`  Sub 1: [X: ${formatNum(appState.sub1X)}m, Y: ${formatNum(appState.sub1Y)}m] - ${mode}`);
+  }
+  if (appState.sub2Enabled) {
+    const mode = appState.sub2CardioidEnabled ? `Cardioid (${formatNum(appState.sub2DirectionDeg)}°)` : 'Omni';
+    titleLines.push(`  Sub 2: [X: ${formatNum(appState.sub2X)}m, Y: ${formatNum(appState.sub2Y)}m] - ${mode}`);
+  }
+
+  const lineHeight = 24;
+  const padding = 20;
+  const blockWidth = 450;
+  const maxLines = 13; // Fixed block height for stability regardless of enabled subs
+  const blockHeight = maxLines * lineHeight + padding * 2;
+  const blockX = exportCanvas.width - marginX - blockWidth;
+  const blockY = exportCanvas.height - marginY - blockHeight;
+
+  exCtx.textAlign = 'left';
+  exCtx.textBaseline = 'top';
+  exCtx.font = '16px monospace';
+  exCtx.strokeStyle = '#000000';
+  exCtx.lineWidth = 2;
+  
+  exCtx.strokeRect(blockX, blockY, blockWidth, blockHeight);
+  
+  titleLines.forEach((line, i) => {
+    exCtx.fillText(line, blockX + padding, blockY + padding + i * lineHeight);
+  });
 
   // Trigger download
   const dataUrl = exportCanvas.toDataURL('image/png');
