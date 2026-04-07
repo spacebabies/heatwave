@@ -231,7 +231,7 @@ function renderToContext(
 
   targetCtx.fillStyle = 'red';
   targetCtx.strokeStyle = 'white';
-  
+
   const markerSize = isExport ? 16 : 10;
   const lineLength = isExport ? 20 : 10;
 
@@ -402,11 +402,11 @@ function exportToPng() {
 
   // --- Title Block (Bottom Right) ---
   function formatNum(n: number) { return Number(n.toFixed(2)); }
-  
+
   const titleLines: string[] = [
     `Project: ${appState.projectName}`,
-    `Date: ${new Date().toLocaleDateString()}`,
-    `Room: ${formatNum(appState.roomWidthM)}m x ${formatNum(appState.roomHeightM)}m`,
+    `Date: ${new Date().toISOString()}`,
+    `Room: ${formatNum(appState.roomWidthM)} m x ${formatNum(appState.roomHeightM)} m`,
     `Frequency: ${formatNum(appState.frequency)} Hz`,
     `Wall Reflection: ${appState.enableWallReflections ? formatNum(appState.wallReflectionAmplitude) : 'Off'}`,
     `Floor Reflection: ${appState.enableFloorReflection ? formatNum(appState.floorReflectionAmplitude) : 'Off'}`,
@@ -439,9 +439,9 @@ function exportToPng() {
   exCtx.font = '16px monospace';
   exCtx.strokeStyle = '#000000';
   exCtx.lineWidth = 2;
-  
+
   exCtx.strokeRect(blockX, blockY, blockWidth, blockHeight);
-  
+
   titleLines.forEach((line, i) => {
     exCtx.fillText(line, blockX + padding, blockY + padding + i * lineHeight);
   });
@@ -450,7 +450,7 @@ function exportToPng() {
   const dataUrl = exportCanvas.toDataURL('image/png');
   const link = document.createElement('a');
   link.href = dataUrl;
-  
+
   // Format filename safely
   const safeName = appState.projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'export';
   link.download = `heatwave_${safeName}.png`;
