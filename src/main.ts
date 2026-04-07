@@ -142,13 +142,13 @@ const PIXELS_PER_METER = 20;
 function buildActiveSources(): SoundSource[] {
   const sources: SoundSource[] = [];
   if (appState.sub1Enabled) {
-    sources.push({ 
+    sources.push({
       x: appState.sub1X, y: appState.sub1Y, z: appState.sub1Z,
       cardioidEnabled: appState.sub1CardioidEnabled, directionDeg: appState.sub1DirectionDeg
     });
   }
   if (appState.sub2Enabled) {
-    sources.push({ 
+    sources.push({
       x: appState.sub2X, y: appState.sub2Y, z: appState.sub2Z,
       cardioidEnabled: appState.sub2CardioidEnabled, directionDeg: appState.sub2DirectionDeg
     });
@@ -222,6 +222,21 @@ function render() {
     ctx.beginPath();
     ctx.fillRect(xPx - 5, yPx - 5, 10, 10);
     ctx.strokeRect(xPx - 5, yPx - 5, 10, 10);
+
+    if (source.cardioidEnabled) {
+      const deg = source.directionDeg ?? 90;
+      const rad = deg * Math.PI / 180;
+      // Canvas Y is down, so Up (0 deg) means negative Y
+      const dx = Math.sin(rad);
+      const dy = -Math.cos(rad);
+
+      ctx.beginPath();
+      ctx.moveTo(xPx, yPx);
+      ctx.lineTo(xPx + dx * 10, yPx + dy * 10);
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.lineWidth = 1; // reset for next marker
+    }
   }
 }
 
