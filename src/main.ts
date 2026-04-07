@@ -4,6 +4,7 @@ import { evaluateGrid } from './acousticModel';
 
 // Application State
 export interface AppState {
+  projectName: string;
   roomWidthM: number;
   roomHeightM: number;
 
@@ -34,6 +35,7 @@ export interface AppState {
 }
 
 const appState: AppState = {
+  projectName: 'Heatwave Study',
   roomWidthM: 40,
   roomHeightM: 20,
 
@@ -83,11 +85,24 @@ function createNumberInput(label: string, stateKey: keyof AppState, step: string
   `;
 }
 
+function createTextInput(label: string, stateKey: keyof AppState) {
+  const value = appState[stateKey] as string;
+  return `
+    <label>
+      ${label}:
+      <input type="text" id="${stateKey}" value="${value}" style="width: 200px">
+    </label><br/>
+  `;
+}
+
 // --- DOM Setup ---
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <canvas id="roomCanvas" width="800" height="400"></canvas>
   <div id="controls" style="margin-top: 16px; display: flex; flex-direction: column; gap: 12px; font-family: sans-serif; font-size: 14px; max-width: 800px; text-align: left;">
+    <div style="padding-bottom: 12px; border-bottom: 1px solid #ccc;">
+      ${createTextInput('Project Name', 'projectName')}
+    </div>
     <div style="display: flex; gap: 24px; padding-bottom: 12px; border-bottom: 1px solid #ccc;">
       <div>
         <strong>Sub 1</strong><br/>
@@ -242,6 +257,14 @@ function render() {
 
 // --- Wire Controls ---
 
+function wireText(stateKey: keyof AppState) {
+  const el = document.getElementById(stateKey) as HTMLInputElement;
+  if (!el) return;
+  el.addEventListener('input', () => {
+    (appState as any)[stateKey] = el.value;
+  });
+}
+
 function wireCheckbox(stateKey: keyof AppState) {
   const el = document.getElementById(stateKey) as HTMLInputElement;
   if (!el) return;
@@ -290,6 +313,8 @@ function wireNumber(stateKey: keyof AppState, min?: number, max?: number) {
 }
 
 // Attach event listeners
+wireText('projectName');
+
 wireCheckbox('sub1Enabled');
 wireNumber('sub1X');
 wireNumber('sub1Y');
