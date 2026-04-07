@@ -124,7 +124,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <strong>Heights & Display</strong><br/>
         ${createNumberInput('Listener Height (m)', 'listenerHeightM', '0.1')}
         ${createNumberInput('Sub Height (m)', 'defaultSourceHeightM', '0.1')}
-        ${createNumberInput('Range (dB)', 'dynamicRangeDb', '1')}
+        ${createNumberInput('Display Range (dB below peak)', 'dynamicRangeDb', '1')}
       </div>
     </div>
 
