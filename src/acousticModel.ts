@@ -9,6 +9,8 @@ export interface SoundSource {
   z?: number;
   amplitude?: number;
   phaseOffsetRadians?: number;
+  cardioidEnabled?: boolean;
+  directionDeg?: number;
 }
 
 export interface AcousticSettings {

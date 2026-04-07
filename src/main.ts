@@ -11,11 +11,15 @@ export interface AppState {
   sub1X: number;
   sub1Y: number;
   sub1Z?: number;
+  sub1CardioidEnabled: boolean;
+  sub1DirectionDeg: number;
 
   sub2Enabled: boolean;
   sub2X: number;
   sub2Y: number;
   sub2Z?: number;
+  sub2CardioidEnabled: boolean;
+  sub2DirectionDeg: number;
 
   frequency: number;
   speedOfSound: number;
@@ -36,10 +40,14 @@ const appState: AppState = {
   sub1Enabled: true,
   sub1X: 3,
   sub1Y: 3,
+  sub1CardioidEnabled: true,
+  sub1DirectionDeg: 90,
 
   sub2Enabled: false,
   sub2X: 3,
   sub2Y: 9,
+  sub2CardioidEnabled: true,
+  sub2DirectionDeg: 90,
 
   frequency: 63.0,
   speedOfSound: 343.0,
@@ -86,12 +94,16 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         ${createCheckbox('Enabled', 'sub1Enabled')}
         ${createNumberInput('X (m)', 'sub1X', '0.1')}
         ${createNumberInput('Y (m)', 'sub1Y', '0.1')}
+        ${createCheckbox('Cardioid', 'sub1CardioidEnabled')}
+        ${createNumberInput('Direction (°)', 'sub1DirectionDeg', '1')}
       </div>
       <div>
         <strong>Sub 2</strong><br/>
         ${createCheckbox('Enabled', 'sub2Enabled')}
         ${createNumberInput('X (m)', 'sub2X', '0.1')}
         ${createNumberInput('Y (m)', 'sub2Y', '0.1')}
+        ${createCheckbox('Cardioid', 'sub2CardioidEnabled')}
+        ${createNumberInput('Direction (°)', 'sub2DirectionDeg', '1')}
       </div>
       <div>
         <strong>Heights & Display</strong><br/>
@@ -130,10 +142,16 @@ const PIXELS_PER_METER = 20;
 function buildActiveSources(): SoundSource[] {
   const sources: SoundSource[] = [];
   if (appState.sub1Enabled) {
-    sources.push({ x: appState.sub1X, y: appState.sub1Y, z: appState.sub1Z });
+    sources.push({ 
+      x: appState.sub1X, y: appState.sub1Y, z: appState.sub1Z,
+      cardioidEnabled: appState.sub1CardioidEnabled, directionDeg: appState.sub1DirectionDeg
+    });
   }
   if (appState.sub2Enabled) {
-    sources.push({ x: appState.sub2X, y: appState.sub2Y, z: appState.sub2Z });
+    sources.push({ 
+      x: appState.sub2X, y: appState.sub2Y, z: appState.sub2Z,
+      cardioidEnabled: appState.sub2CardioidEnabled, directionDeg: appState.sub2DirectionDeg
+    });
   }
   return sources;
 }
@@ -218,6 +236,11 @@ function wireCheckbox(stateKey: keyof AppState) {
   });
 }
 
+// Angle convention: 0 = up, 90 = right, 180 = down, 270 = left
+function normalizeAngleDeg(deg: number): number {
+  return ((deg % 360) + 360) % 360;
+}
+
 function wireNumber(stateKey: keyof AppState, min?: number, max?: number) {
   const el = document.getElementById(stateKey) as HTMLInputElement;
   if (!el) return;
@@ -240,6 +263,11 @@ function wireNumber(stateKey: keyof AppState, min?: number, max?: number) {
         if (finalVal > appState.roomHeightM) finalVal = appState.roomHeightM;
       }
 
+      // Normalize direction angles
+      if (stateKey.endsWith('DirectionDeg')) {
+        finalVal = normalizeAngleDeg(finalVal);
+      }
+
       (appState as any)[stateKey] = finalVal;
       render();
     }
@@ -250,10 +278,14 @@ function wireNumber(stateKey: keyof AppState, min?: number, max?: number) {
 wireCheckbox('sub1Enabled');
 wireNumber('sub1X');
 wireNumber('sub1Y');
+wireCheckbox('sub1CardioidEnabled');
+wireNumber('sub1DirectionDeg');
 
 wireCheckbox('sub2Enabled');
 wireNumber('sub2X');
 wireNumber('sub2Y');
+wireCheckbox('sub2CardioidEnabled');
+wireNumber('sub2DirectionDeg');
 
 wireCheckbox('enableWallReflections');
 wireNumber('wallReflectionCoefficient', 0, 1);
