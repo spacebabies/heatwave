@@ -29,6 +29,16 @@ interface Complex {
   im: number;
 }
 
+// Explicit angle convention: 0 = up (+Y), 90 = right (+X), 180 = down (-Y), 270 = left (-X)
+function getForwardVector(directionDeg: number) {
+  const rad = directionDeg * Math.PI / 180;
+  return {
+    x: Math.sin(rad),
+    y: Math.cos(rad),
+    z: 0
+  };
+}
+
 function addPathContribution(
   totalPressure: Complex,
   xMeters: number,
@@ -40,7 +50,11 @@ function addPathContribution(
   srcAmp: number,
   srcPhase: number,
   reflectionGain: number,
-  waveNumber: number
+  waveNumber: number,
+  cardioidEnabled: boolean,
+  dirX: number,
+  dirY: number,
+  dirZ: number
 ) {
   const dx = xMeters - srcX;
   const dy = yMeters - srcY;
@@ -48,8 +62,19 @@ function addPathContribution(
   let r = Math.sqrt(dx * dx + dy * dy + dz * dz);
   r = Math.max(0.1, r); // Clamp min distance to avoid singularities
   
+  let directivityGain = 1.0;
+  if (cardioidEnabled) {
+    const ndx = dx / r;
+    const ndy = dy / r;
+    const ndz = dz / r;
+    const cosDelta = dirX * ndx + dirY * ndy + dirZ * ndz;
+    directivityGain = 0.5 * (1 + cosDelta);
+    if (directivityGain < 0) directivityGain = 0;
+    if (directivityGain > 1) directivityGain = 1;
+  }
+  
   // Complex pressure: p = (A / r) * exp(j * (-k * r + phaseOffset))
-  const amplitude = (srcAmp * reflectionGain) / r;
+  const amplitude = (srcAmp * reflectionGain * directivityGain) / r;
   const phase = -waveNumber * r + srcPhase;
   
   totalPressure.re += amplitude * Math.cos(phase);
@@ -72,28 +97,37 @@ export function samplePointSPL(
     const srcAmp = source.amplitude ?? 1.0;
     const srcPhase = source.phaseOffsetRadians ?? 0.0;
     const srcZ = source.z ?? settings.defaultSourceHeightM;
+    const isCardioid = source.cardioidEnabled ?? false;
+    let fwdX = 0, fwdY = 0, fwdZ = 0;
+    
+    if (isCardioid) {
+      const fwd = getForwardVector(source.directionDeg ?? 90);
+      fwdX = fwd.x;
+      fwdY = fwd.y;
+      fwdZ = fwd.z;
+    }
     
     // Direct path
-    addPathContribution(totalPressure, xMeters, yMeters, settings.listenerHeightM, source.x, source.y, srcZ, srcAmp, srcPhase, 1.0, waveNumber);
+    addPathContribution(totalPressure, xMeters, yMeters, settings.listenerHeightM, source.x, source.y, srcZ, srcAmp, srcPhase, 1.0, waveNumber, isCardioid, fwdX, fwdY, fwdZ);
     
     // Floor reflection (image source vertically mirrored across z = 0)
     if (settings.enableFloorReflection) {
-      addPathContribution(totalPressure, xMeters, yMeters, settings.listenerHeightM, source.x, source.y, -srcZ, srcAmp, srcPhase, settings.floorReflectionCoefficient, waveNumber);
+      addPathContribution(totalPressure, xMeters, yMeters, settings.listenerHeightM, source.x, source.y, -srcZ, srcAmp, srcPhase, settings.floorReflectionCoefficient, waveNumber, isCardioid, fwdX, fwdY, -fwdZ);
     }
     
     // First-order wall reflections (image sources in plan view, using true source height)
     if (settings.enableWallReflections) {
       // Left wall (x = 0)
-      addPathContribution(totalPressure, xMeters, yMeters, settings.listenerHeightM, -source.x, source.y, srcZ, srcAmp, srcPhase, settings.wallReflectionCoefficient, waveNumber);
+      addPathContribution(totalPressure, xMeters, yMeters, settings.listenerHeightM, -source.x, source.y, srcZ, srcAmp, srcPhase, settings.wallReflectionCoefficient, waveNumber, isCardioid, -fwdX, fwdY, fwdZ);
       
       // Right wall (x = room.width)
-      addPathContribution(totalPressure, xMeters, yMeters, settings.listenerHeightM, 2 * room.width - source.x, source.y, srcZ, srcAmp, srcPhase, settings.wallReflectionCoefficient, waveNumber);
+      addPathContribution(totalPressure, xMeters, yMeters, settings.listenerHeightM, 2 * room.width - source.x, source.y, srcZ, srcAmp, srcPhase, settings.wallReflectionCoefficient, waveNumber, isCardioid, -fwdX, fwdY, fwdZ);
       
       // Bottom wall (y = 0)
-      addPathContribution(totalPressure, xMeters, yMeters, settings.listenerHeightM, source.x, -source.y, srcZ, srcAmp, srcPhase, settings.wallReflectionCoefficient, waveNumber);
+      addPathContribution(totalPressure, xMeters, yMeters, settings.listenerHeightM, source.x, -source.y, srcZ, srcAmp, srcPhase, settings.wallReflectionCoefficient, waveNumber, isCardioid, fwdX, -fwdY, fwdZ);
       
       // Top wall (y = room.height)
-      addPathContribution(totalPressure, xMeters, yMeters, settings.listenerHeightM, source.x, 2 * room.height - source.y, srcZ, srcAmp, srcPhase, settings.wallReflectionCoefficient, waveNumber);
+      addPathContribution(totalPressure, xMeters, yMeters, settings.listenerHeightM, source.x, 2 * room.height - source.y, srcZ, srcAmp, srcPhase, settings.wallReflectionCoefficient, waveNumber, isCardioid, fwdX, -fwdY, fwdZ);
     }
   }
   
