@@ -134,10 +134,13 @@ export function samplePointSPL(
   // Magnitude of complex pressure
   const magnitude = Math.sqrt(totalPressure.re * totalPressure.re + totalPressure.im * totalPressure.im);
   
+  // Clamp magnitude to avoid -Infinity from log10(0) during perfect cancellation
+  const safeMagnitude = Math.max(1e-12, magnitude);
+  
   // SPL in relative dB
   // Note: Since amplitude is proportional to 1/r, the 20 * log10(magnitude) still equates 
   // to -20 * log10(r) for a single source, preserving the same relative scale.
-  return 20 * Math.log10(magnitude);
+  return 20 * Math.log10(safeMagnitude);
 }
 
 export function evaluateGrid(
