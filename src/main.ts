@@ -23,8 +23,8 @@ export interface AppState {
 
   frequency: number;
   speedOfSound: number;
-  wallReflectionCoefficient: number;
-  floorReflectionCoefficient: number;
+  wallReflectionAmplitude: number;
+  floorReflectionAmplitude: number;
   enableWallReflections: boolean;
   enableFloorReflection: boolean;
   listenerHeightM: number;
@@ -51,8 +51,8 @@ const appState: AppState = {
 
   frequency: 63.0,
   speedOfSound: 343.0,
-  wallReflectionCoefficient: 0.8,
-  floorReflectionCoefficient: 0.8,
+  wallReflectionAmplitude: 0.8,
+  floorReflectionAmplitude: 0.8,
   enableWallReflections: true,
   enableFloorReflection: true,
   listenerHeightM: 1.5,
@@ -117,17 +117,17 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div>
         <strong>Wall Reflections</strong><br/>
         ${createCheckbox('Enabled', 'enableWallReflections')}
-        ${createNumberInput('Coefficient', 'wallReflectionCoefficient', '0.1')}
+        ${createNumberInput('Amp. Coeff', 'wallReflectionAmplitude', '0.1')}
       </div>
       <div>
         <strong>Floor Reflection</strong><br/>
         ${createCheckbox('Enabled', 'enableFloorReflection')}
-        ${createNumberInput('Coefficient', 'floorReflectionCoefficient', '0.1')}
+        ${createNumberInput('Amp. Coeff', 'floorReflectionAmplitude', '0.1')}
       </div>
     </div>
 
     <div style="font-size: 12px; color: #555;">
-      Note: These coefficients are rough starting points, not absolute material constants.<br/>
+      Note: These are pressure/amplitude reflection coefficients, not energy coefficients. They are rough starting points, not absolute material constants.<br/>
       Examples: Glass ~0.95, Parquet/Hardwood ~0.90, Concrete/Hard drywall ~0.80
     </div>
   </div>
@@ -160,8 +160,8 @@ function buildAcousticSettings(): AcousticSettings {
   return {
     frequency: appState.frequency,
     speedOfSound: appState.speedOfSound,
-    wallReflectionCoefficient: appState.wallReflectionCoefficient,
-    floorReflectionCoefficient: appState.floorReflectionCoefficient,
+    wallReflectionAmplitude: appState.wallReflectionAmplitude,
+    floorReflectionAmplitude: appState.floorReflectionAmplitude,
     enableWallReflections: appState.enableWallReflections,
     enableFloorReflection: appState.enableFloorReflection,
     listenerHeightM: appState.listenerHeightM,
@@ -303,10 +303,10 @@ wireCheckbox('sub2CardioidEnabled');
 wireNumber('sub2DirectionDeg');
 
 wireCheckbox('enableWallReflections');
-wireNumber('wallReflectionCoefficient', 0, 1);
+wireNumber('wallReflectionAmplitude', 0, 1);
 
 wireCheckbox('enableFloorReflection');
-wireNumber('floorReflectionCoefficient', 0, 1);
+wireNumber('floorReflectionAmplitude', 0, 1);
 
 wireNumber('listenerHeightM', 0, 20); // Clamp listener to room height
 wireNumber('defaultSourceHeightM', 0, 20); // Clamp source height to room height
