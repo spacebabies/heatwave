@@ -145,6 +145,9 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       Note: These are pressure/amplitude reflection coefficients, not energy coefficients. They are rough starting points, not absolute material constants.<br/>
       Examples: Glass ~0.95, Parquet/Hardwood ~0.90, Concrete/Hard drywall ~0.80
     </div>
+    <div style="margin-top: 12px; border-top: 1px solid #ccc; padding-top: 12px;">
+      <button id="exportBtn" style="padding: 8px 16px; cursor: pointer;">Export PNG</button>
+    </div>
   </div>
 `;
 
@@ -339,3 +342,41 @@ wireNumber('dynamicRangeDb', 10, 120); // Clamp dB range 10-120
 
 // Initial render
 render();
+
+// --- Export ---
+
+function exportToPng() {
+  const exportCanvas = document.createElement('canvas');
+  // A4 portrait at ~150 DPI
+  exportCanvas.width = 1240;
+  exportCanvas.height = 1754;
+  const exCtx = exportCanvas.getContext('2d');
+  if (!exCtx) return;
+
+  // Draw white background for A4 page
+  exCtx.fillStyle = '#ffffff';
+  exCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+
+  // In the future, we can re-render a high-res acoustic grid directly into exCtx.
+  // For now, copy the current on-screen canvas to keep it simple.
+  const sourceCanvas = document.getElementById('roomCanvas') as HTMLCanvasElement;
+  
+  const marginX = 50;
+  const marginY = 50;
+  const drawWidth = exportCanvas.width - marginX * 2;
+  const drawHeight = (sourceCanvas.height / sourceCanvas.width) * drawWidth;
+
+  exCtx.drawImage(sourceCanvas, marginX, marginY, drawWidth, drawHeight);
+
+  // Trigger download
+  const dataUrl = exportCanvas.toDataURL('image/png');
+  const link = document.createElement('a');
+  link.href = dataUrl;
+  
+  // Format filename safely
+  const safeName = appState.projectName.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'export';
+  link.download = `heatwave_${safeName}.png`;
+  link.click();
+}
+
+document.getElementById('exportBtn')?.addEventListener('click', exportToPng);
