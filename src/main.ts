@@ -6,17 +6,17 @@ import { evaluateGrid } from './acousticModel';
 export interface AppState {
   roomWidthM: number;
   roomHeightM: number;
-  
+
   sub1Enabled: boolean;
   sub1X: number;
   sub1Y: number;
   sub1Z?: number;
-  
+
   sub2Enabled: boolean;
   sub2X: number;
   sub2Y: number;
   sub2Z?: number;
-  
+
   frequency: number;
   speedOfSound: number;
   wallReflectionCoefficient: number;
@@ -25,22 +25,22 @@ export interface AppState {
   enableFloorReflection: boolean;
   listenerHeightM: number;
   defaultSourceHeightM: number;
-  
+
   dynamicRangeDb: number;
 }
 
 const appState: AppState = {
   roomWidthM: 40,
   roomHeightM: 20,
-  
+
   sub1Enabled: true,
-  sub1X: 1,
-  sub1Y: 1,
-  
+  sub1X: 3,
+  sub1Y: 3,
+
   sub2Enabled: false,
-  sub2X: 15,
-  sub2Y: 1,
-  
+  sub2X: 3,
+  sub2Y: 9,
+
   frequency: 63.0,
   speedOfSound: 343.0,
   wallReflectionCoefficient: 0.8,
@@ -49,7 +49,7 @@ const appState: AppState = {
   enableFloorReflection: true,
   listenerHeightM: 1.5,
   defaultSourceHeightM: 0.5,
-  
+
   dynamicRangeDb: 50,
 };
 
@@ -69,7 +69,7 @@ function createNumberInput(label: string, stateKey: keyof AppState, step: string
   const value = appState[stateKey] as number;
   return `
     <label>
-      ${label}: 
+      ${label}:
       <input type="number" id="${stateKey}" value="${value}" style="width: 60px" step="${step}">
     </label><br/>
   `;
@@ -100,7 +100,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         ${createNumberInput('Range (dB)', 'dynamicRangeDb', '1')}
       </div>
     </div>
-    
+
     <div style="display: flex; gap: 24px;">
       <div>
         <strong>Wall Reflections</strong><br/>
@@ -165,22 +165,22 @@ function render() {
   const CELL_SIZE_PX = 4; // Coarse grid for rendering performance
   const cols = Math.ceil(canvas.width / CELL_SIZE_PX);
   const rows = Math.ceil(canvas.height / CELL_SIZE_PX);
-  
+
   // 1. Run simulation step
   const { data, maxSPL } = evaluateGrid(room, sources, settings, cols, rows, CELL_SIZE_PX, PIXELS_PER_METER);
-  
+
   // 2. Render data
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
       const spl = data[row * cols + col];
       const relativeSPL = spl - maxSPL; // 0 at max, negative elsewhere
-      
+
       // Map relative SPL to [0, 1] for coloring
       const t = Math.max(0, (relativeSPL + appState.dynamicRangeDb) / appState.dynamicRangeDb);
-      
+
       // Map t to hue: 0 (red) for loud, 240 (blue) for quiet
       const hue = (1 - t) * 240;
-      
+
       ctx.fillStyle = `hsl(${hue}, 100%, 50%)`;
       ctx.fillRect(col * CELL_SIZE_PX, row * CELL_SIZE_PX, CELL_SIZE_PX, CELL_SIZE_PX);
     }
@@ -197,7 +197,7 @@ function render() {
   ctx.fillStyle = 'red';
   ctx.strokeStyle = 'white';
   ctx.lineWidth = 1;
-  
+
   for (const source of sources) {
     const xPx = source.x * PIXELS_PER_METER;
     const yPx = (room.height - source.y) * PIXELS_PER_METER;
@@ -225,11 +225,11 @@ function wireNumber(stateKey: keyof AppState, min?: number, max?: number) {
     const val = parseFloat(el.value);
     if (!isNaN(val)) {
       let finalVal = val;
-      
+
       // Enforce bounds
       if (min !== undefined && finalVal < min) finalVal = min;
       if (max !== undefined && finalVal > max) finalVal = max;
-      
+
       // Enforce room limits for coordinates
       if (stateKey.endsWith('X')) {
         if (finalVal < 0) finalVal = 0;
@@ -239,7 +239,7 @@ function wireNumber(stateKey: keyof AppState, min?: number, max?: number) {
         if (finalVal < 0) finalVal = 0;
         if (finalVal > appState.roomHeightM) finalVal = appState.roomHeightM;
       }
-      
+
       (appState as any)[stateKey] = finalVal;
       render();
     }
