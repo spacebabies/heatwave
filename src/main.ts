@@ -240,17 +240,19 @@ function renderToContext(
   targetCtx.lineWidth = isExport ? 4 : 2;
   targetCtx.strokeRect(0, 0, widthPx, heightPx);
 
-  targetCtx.fillStyle = 'black';
-  targetCtx.font = isExport ? 'bold 24px sans-serif' : 'bold 16px sans-serif';
-  const textPad = isExport ? 15 : 10;
-  
-  targetCtx.textAlign = 'left';
-  targetCtx.textBaseline = 'top';
-  targetCtx.fillText('Y', textPad, textPad);
+  if (!isExport) {
+    targetCtx.fillStyle = 'black';
+    targetCtx.font = '14px sans-serif';
+    const textPad = 10;
 
-  targetCtx.textAlign = 'right';
-  targetCtx.textBaseline = 'bottom';
-  targetCtx.fillText('X', widthPx - textPad, heightPx - textPad);
+    targetCtx.textAlign = 'left';
+    targetCtx.textBaseline = 'top';
+    targetCtx.fillText('Y', textPad, textPad);
+
+    targetCtx.textAlign = 'right';
+    targetCtx.textBaseline = 'bottom';
+    targetCtx.fillText('X', widthPx - textPad, heightPx - textPad);
+  }
 
   targetCtx.fillStyle = 'red';
   targetCtx.strokeStyle = 'white';
