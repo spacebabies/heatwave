@@ -11,14 +11,14 @@ export interface AppState {
   sub1Enabled: boolean;
   sub1X: number;
   sub1Y: number;
-  sub1Z?: number;
+  sub1Z: number;
   sub1CardioidEnabled: boolean;
   sub1DirectionDeg: number;
 
   sub2Enabled: boolean;
   sub2X: number;
   sub2Y: number;
-  sub2Z?: number;
+  sub2Z: number;
   sub2CardioidEnabled: boolean;
   sub2DirectionDeg: number;
 
@@ -29,7 +29,6 @@ export interface AppState {
   enableWallReflections: boolean;
   enableFloorReflection: boolean;
   listenerHeightM: number;
-  defaultSourceHeightM: number;
 
   dynamicRangeDb: number;
 }
@@ -42,12 +41,14 @@ const appState: AppState = {
   sub1Enabled: true,
   sub1X: 3,
   sub1Y: 3,
+  sub1Z: 0.5,
   sub1CardioidEnabled: true,
   sub1DirectionDeg: 90,
 
   sub2Enabled: false,
   sub2X: 3,
   sub2Y: 9,
+  sub2Z: 0.5,
   sub2CardioidEnabled: true,
   sub2DirectionDeg: 90,
 
@@ -58,7 +59,6 @@ const appState: AppState = {
   enableWallReflections: true,
   enableFloorReflection: true,
   listenerHeightM: 1.5,
-  defaultSourceHeightM: 0.5,
 
   dynamicRangeDb: 50,
 };
@@ -114,6 +114,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         ${createCheckbox('Enabled', 'sub1Enabled')}
         ${createNumberInput('X (m)', 'sub1X', '0.1')}
         ${createNumberInput('Y (m)', 'sub1Y', '0.1')}
+        ${createNumberInput('Z (m)', 'sub1Z', '0.1')}
         ${createCheckbox('Cardioid', 'sub1CardioidEnabled')}
         ${createNumberInput('Direction (°)', 'sub1DirectionDeg', '1')}
       </div>
@@ -122,13 +123,13 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         ${createCheckbox('Enabled', 'sub2Enabled')}
         ${createNumberInput('X (m)', 'sub2X', '0.1')}
         ${createNumberInput('Y (m)', 'sub2Y', '0.1')}
+        ${createNumberInput('Z (m)', 'sub2Z', '0.1')}
         ${createCheckbox('Cardioid', 'sub2CardioidEnabled')}
         ${createNumberInput('Direction (°)', 'sub2DirectionDeg', '1')}
       </div>
       <div>
         <strong>Heights & Display</strong><br/>
         ${createNumberInput('Listener Height (m)', 'listenerHeightM', '0.1')}
-        ${createNumberInput('Sub Height (m)', 'defaultSourceHeightM', '0.1')}
         ${createNumberInput('Display Range (dB below peak)', 'dynamicRangeDb', '1')}
       </div>
     </fieldset>
@@ -194,7 +195,6 @@ function buildAcousticSettings(): AcousticSettings {
     enableWallReflections: appState.enableWallReflections,
     enableFloorReflection: appState.enableFloorReflection,
     listenerHeightM: appState.listenerHeightM,
-    defaultSourceHeightM: appState.defaultSourceHeightM,
   };
 }
 
@@ -336,12 +336,14 @@ wireText('projectName');
 wireCheckbox('sub1Enabled');
 wireNumber('sub1X');
 wireNumber('sub1Y');
+wireNumber('sub1Z', 0, 20);
 wireCheckbox('sub1CardioidEnabled');
 wireNumber('sub1DirectionDeg');
 
 wireCheckbox('sub2Enabled');
 wireNumber('sub2X');
 wireNumber('sub2Y');
+wireNumber('sub2Z', 0, 20);
 wireCheckbox('sub2CardioidEnabled');
 wireNumber('sub2DirectionDeg');
 
@@ -352,7 +354,6 @@ wireCheckbox('enableFloorReflection');
 wireNumber('floorReflectionAmplitude', 0, 1);
 
 wireNumber('listenerHeightM', 0, 20); // Clamp listener to room height
-wireNumber('defaultSourceHeightM', 0, 20); // Clamp source height to room height
 wireNumber('dynamicRangeDb', 10, 120); // Clamp dB range 10-120
 
 // Initial render
@@ -422,7 +423,6 @@ function exportToPng() {
     `Wall Reflection: ${appState.enableWallReflections ? formatNum(appState.wallReflectionAmplitude) : 'Off'}`,
     `Floor Reflection: ${appState.enableFloorReflection ? formatNum(appState.floorReflectionAmplitude) : 'Off'}`,
     `Listener Height: ${formatNum(appState.listenerHeightM)} m`,
-    `Sub Height: ${formatNum(appState.defaultSourceHeightM)} m`,
     `Dynamic Range: ${formatNum(appState.dynamicRangeDb)} dB`,
     '',
     'Subwoofers:'
@@ -430,16 +430,16 @@ function exportToPng() {
 
   if (appState.sub1Enabled) {
     const mode = appState.sub1CardioidEnabled ? `Cardioid (${formatNum(appState.sub1DirectionDeg)}°)` : 'Omni';
-    titleLines.push(`  Sub 1: [X: ${formatNum(appState.sub1X)}m, Y: ${formatNum(appState.sub1Y)}m] - ${mode}`);
+    titleLines.push(`  Sub 1: [X: ${formatNum(appState.sub1X)}m, Y: ${formatNum(appState.sub1Y)}m, Z: ${formatNum(appState.sub1Z)}m] - ${mode}`);
   }
   if (appState.sub2Enabled) {
     const mode = appState.sub2CardioidEnabled ? `Cardioid (${formatNum(appState.sub2DirectionDeg)}°)` : 'Omni';
-    titleLines.push(`  Sub 2: [X: ${formatNum(appState.sub2X)}m, Y: ${formatNum(appState.sub2Y)}m] - ${mode}`);
+    titleLines.push(`  Sub 2: [X: ${formatNum(appState.sub2X)}m, Y: ${formatNum(appState.sub2Y)}m, Z: ${formatNum(appState.sub2Z)}m] - ${mode}`);
   }
 
   const lineHeight = 24;
   const padding = 20;
-  const blockWidth = 450;
+  const blockWidth = 550;
   const maxLines = 13; // Fixed block height for stability regardless of enabled subs
   const blockHeight = maxLines * lineHeight + padding * 2;
   const blockX = exportCanvas.width - marginX - blockWidth;

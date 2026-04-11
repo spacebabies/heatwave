@@ -21,7 +21,6 @@ export interface AcousticSettings {
   enableWallReflections: boolean;
   enableFloorReflection: boolean;
   listenerHeightM: number;
-  defaultSourceHeightM: number;
 }
 
 interface Complex {
@@ -97,7 +96,7 @@ export function samplePointSPL(
   for (const source of sources) {
     const srcAmp = source.amplitude ?? 1.0;
     const srcPhase = source.phaseOffsetRadians ?? 0.0;
-    const srcZ = source.z ?? settings.defaultSourceHeightM;
+    const srcZ = source.z ?? 0.5;
     const isCardioid = source.cardioidEnabled ?? false;
     let fwdX = 0, fwdY = 0;
     
