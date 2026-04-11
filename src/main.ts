@@ -80,7 +80,7 @@ function createNumberInput(label: string, stateKey: keyof AppState, step: string
   return `
     <label>
       ${label}:
-      <input type="number" id="${stateKey}" value="${value}" style="width: 60px" step="${step}">
+      <input type="number" id="${stateKey}" value="${value}" class="number-input" step="${step}">
     </label><br/>
   `;
 }
@@ -90,7 +90,7 @@ function createTextInput(label: string, stateKey: keyof AppState) {
   return `
     <label>
       ${label}:
-      <input type="text" id="${stateKey}" value="${value}" style="width: 200px">
+      <input type="text" id="${stateKey}" value="${value}" class="text-input">
     </label><br/>
   `;
 }
@@ -99,11 +99,14 @@ function createTextInput(label: string, stateKey: keyof AppState) {
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <canvas id="roomCanvas" width="800" height="400"></canvas>
-  <div id="controls" style="margin-top: 16px; display: flex; flex-direction: column; gap: 12px; font-family: sans-serif; font-size: 14px; max-width: 800px; text-align: left;">
-    <div style="padding-bottom: 12px; border-bottom: 1px solid #ccc;">
+  <div id="controls">
+    <fieldset class="fieldset-complex">
+      <legend>Blah</legend>
       ${createTextInput('Project Name', 'projectName')}
-    </div>
-    <div style="display: flex; gap: 24px; padding-bottom: 12px; border-bottom: 1px solid #ccc;">
+    </fieldset>
+
+    <fieldset class="fieldset-complex">
+      <legend>Subwoofers</legend>
       <div>
         <strong>Sub 1</strong><br/>
         ${createCheckbox('Enabled', 'sub1Enabled')}
@@ -126,9 +129,10 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         ${createNumberInput('Sub Height (m)', 'defaultSourceHeightM', '0.1')}
         ${createNumberInput('Display Range (dB below peak)', 'dynamicRangeDb', '1')}
       </div>
-    </div>
+    </fieldset>
 
-    <div style="display: flex; gap: 24px;">
+    <fieldset class="fieldset-complex">
+      <legend>Room characteristics</legend>
       <div>
         <strong>Wall Reflections</strong><br/>
         ${createCheckbox('Enabled', 'enableWallReflections')}
@@ -141,12 +145,13 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       </div>
     </div>
 
-    <div style="font-size: 12px; color: #555;">
+    <div class="note-text">
       Note: These are pressure/amplitude reflection coefficients, not energy coefficients. They are rough starting points, not absolute material constants.<br/>
       Examples: Glass ~0.95, Parquet/Hardwood ~0.90, Concrete/Hard drywall ~0.80
     </div>
-    <div style="margin-top: 12px; border-top: 1px solid #ccc; padding-top: 12px;">
-      <button id="exportBtn" style="padding: 8px 16px; cursor: pointer;">Export PNG</button>
+
+    <div class="export-container">
+      <button id="exportBtn">Export PNG</button>
     </div>
   </div>
 `;

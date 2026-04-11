@@ -8,3 +8,51 @@ canvas {
   border: 1px solid #ccc;
   display: block;
 }
+
+.number-input {
+  width: 60px;
+}
+
+.text-input {
+  width: 200px;
+}
+
+#controls {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-family: sans-serif;
+  font-size: 14px;
+  max-width: 800px;
+  text-align: left;
+}
+
+.fieldset-complex {
+  background-color: #fafafa;
+  display: flex;
+  gap: 24px;
+  padding-bottom: 12px;
+  border: none;
+}
+
+.flex-row-gap {
+  display: flex;
+  gap: 24px;
+}
+
+.note-text {
+  font-size: 12px;
+  color: #555;
+}
+
+.export-container {
+  margin-top: 12px;
+  border-top: 1px solid #ccc;
+  padding-top: 12px;
+}
+
+#exportBtn {
+  padding: 8px 16px;
+  cursor: pointer;
+}

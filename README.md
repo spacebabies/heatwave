@@ -4,7 +4,7 @@ A minimal, fast browser-based acoustic heatmap simulator built with Vite, TypeSc
 
 ## Overview
 
-Heatwave is designed to simulate and visualize acoustic fields in a 2D room environment. The current prototype renders a fixed 40x20 meter room onto an 800x400 pixel HTML canvas (using a direct 20 pixels-per-meter scale).
+Heatwave is designed to simulate and visualize acoustic fields in a 2D room environment. The current prototype renders a fixed 40x20 meter room onto an 800x400 pixel HTML canvas (using a direct 20 pixels-per-meter scale) which is rendered twice (browser and PNG export).
 
 We have evolved from a simple scalar distance-attenuation prototype to a fully interactive, fixed-frequency complex pressure solver (currently running at 63 Hz) with support for boundary reflections and real-time UI controls.
 
@@ -33,6 +33,14 @@ We have evolved from a simple scalar distance-attenuation prototype to a fully i
 *   **Heatmap Rendering:**
     *   Maps the computed dynamic range to an HSL color gradient: `0 dB` (peak) maps to red, and `-XX dB` maps to blue.
 
+## Notable Things
+
+Maintain the web and PNG renderings in parallel, so they keep exact feature parity.
+
+Never use inline CSS, put all CSS in the stylesheet.
+
+Use rich, semantic HTML. Do not use a `<div>` when a `<fieldset>` would be more appropriate. Correctly apply autocomplete hints and aria-helpers when a11y cannot be achieved using semantic HTML.
+
 ## Where We Came From
 
 1. **V1:** A simple `-20 * log10(d)` distance-only model that just visualized a single hotspot.
@@ -41,9 +49,12 @@ We have evolved from a simple scalar distance-attenuation prototype to a fully i
 
 ## To Do
 
+- Allow Room dimensions to be changed
+- Allow Z-axis per sub
+- Allow per-wall reflection coefficient
+- Support absolute calibrated SPL.
 - Frequency-agnostic solver (allow changing the frequency dynamically).
 - Add ceiling reflection.
-- Support absolute calibrated SPL.
 - Enhance the UI styling (if deemed necessary).
 - **Vertical Stacking & Arrays:** Explore support for vertically stacked subwoofers (explicit array visualization or full Z-coordinate inputs in the UI) at a later stage.
 
