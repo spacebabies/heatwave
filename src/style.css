@@ -3,10 +3,37 @@ body {
   background-color: #f0f0f0;
 }
 
+#app {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.canvas-container {
+  width: 100%;
+  overflow-x: auto;
+}
+
 canvas {
   background-color: #fff;
   border: 1px solid #ccc;
   display: block;
+}
+
+/* Desktop layout */
+@media (min-width: 768px) {
+  #app {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .canvas-container {
+    width: 60%;
+  }
+
+  #controls {
+    width: 40%;
+  }
 }
 
 .number-input {
@@ -18,19 +45,18 @@ canvas {
 }
 
 #controls {
-  margin-top: 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   font-family: sans-serif;
   font-size: 14px;
-  max-width: 800px;
   text-align: left;
 }
 
 .fieldset-complex {
   background-color: #fafafa;
   display: flex;
+  flex-wrap: wrap;
   gap: 24px;
   padding-bottom: 12px;
   border: none;
@@ -46,9 +72,14 @@ canvas {
   color: #555;
 }
 
+.note-text p,
+.note-text ul,
+.note-text ol {
+  margin-top: 0;
+}
+
 .export-container {
   margin-top: 12px;
-  border-top: 1px solid #ccc;
   padding-top: 12px;
 }
 

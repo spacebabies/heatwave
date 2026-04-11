@@ -98,10 +98,12 @@ function createTextInput(label: string, stateKey: keyof AppState) {
 // --- DOM Setup ---
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-  <canvas id="roomCanvas" width="800" height="400"></canvas>
+  <div class="canvas-container">
+    <canvas id="roomCanvas" width="800" height="400"></canvas>
+  </div>
   <div id="controls">
     <fieldset class="fieldset-complex">
-      <legend>Blah</legend>
+      <legend>Project</legend>
       ${createTextInput('Project Name', 'projectName')}
     </fieldset>
 
@@ -143,12 +145,16 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         ${createCheckbox('Enabled', 'enableFloorReflection')}
         ${createNumberInput('Amp. Coeff', 'floorReflectionAmplitude', '0.1')}
       </div>
-    </div>
 
-    <div class="note-text">
-      Note: These are pressure/amplitude reflection coefficients, not energy coefficients. They are rough starting points, not absolute material constants.<br/>
-      Examples: Glass ~0.95, Parquet/Hardwood ~0.90, Concrete/Hard drywall ~0.80
-    </div>
+      <div class="note-text">
+        <ul>
+          <li>Glass ~0.95</li>
+          <li>Parquet/Hardwood ~0.90</li>
+          <li>Concrete/Hard drywall ~0.80</li>
+        </ul>
+        <p>Note: These are rough starting points, not absolute material constants.</p>
+      </div>
+    </fieldset>
 
     <div class="export-container">
       <button id="exportBtn">Export PNG</button>
