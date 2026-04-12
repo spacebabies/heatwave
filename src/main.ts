@@ -156,22 +156,22 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div>
         <strong>Left Wall</strong><br/>
         ${createCheckbox('Enabled', 'enableWallReflectionLeft')}
-        ${createNumberInput('Amp. Coeff', 'wallReflectionAmplitudeLeft', '0.1')}
+        ${createNumberInput('Refl. Coeff', 'wallReflectionAmplitudeLeft', '0.1', '0', '1')}
       </div>
       <div>
         <strong>Right Wall</strong><br/>
         ${createCheckbox('Enabled', 'enableWallReflectionRight')}
-        ${createNumberInput('Amp. Coeff', 'wallReflectionAmplitudeRight', '0.1')}
+        ${createNumberInput('Refl. Coeff', 'wallReflectionAmplitudeRight', '0.1', '0', '1')}
       </div>
       <div>
         <strong>Top Wall</strong><br/>
         ${createCheckbox('Enabled', 'enableWallReflectionTop')}
-        ${createNumberInput('Amp. Coeff', 'wallReflectionAmplitudeTop', '0.1')}
+        ${createNumberInput('Refl. Coeff', 'wallReflectionAmplitudeTop', '0.1', '0', '1')}
       </div>
       <div>
         <strong>Bottom Wall</strong><br/>
         ${createCheckbox('Enabled', 'enableWallReflectionBottom')}
-        ${createNumberInput('Amp. Coeff', 'wallReflectionAmplitudeBottom', '0.1')}
+        ${createNumberInput('Refl. Coeff', 'wallReflectionAmplitudeBottom', '0.1', '0', '1')}
       </div>
     </fieldset>
 
@@ -185,7 +185,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div>
         <strong>Floor Reflection</strong><br/>
         ${createCheckbox('Enabled', 'enableFloorReflection')}
-        ${createNumberInput('Amp. Coeff', 'floorReflectionAmplitude', '0.1', '0', '1')}
+        ${createNumberInput('Refl. Coeff', 'floorReflectionAmplitude', '0.1', '0', '1')}
       </div>
     </fieldset>
 

@@ -49,6 +49,7 @@ Use rich, semantic HTML. Do not use a `<div>` when a `<fieldset>` would be more 
 
 ## To Do
 
+- Refactor UI to use data-driven generation (config arrays rather than manual HTML strings).
 - Allow Z-axis per sub
 - Support absolute calibrated SPL.
 - Frequency-agnostic solver (allow changing the frequency dynamically).
