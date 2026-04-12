@@ -50,7 +50,6 @@ Use rich, semantic HTML. Do not use a `<div>` when a `<fieldset>` would be more 
 ## To Do
 
 - Allow Z-axis per sub
-- Allow per-wall reflection coefficient
 - Support absolute calibrated SPL.
 - Frequency-agnostic solver (allow changing the frequency dynamically).
 - Add ceiling reflection.

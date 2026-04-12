@@ -21,7 +21,10 @@ export interface AcousticSettings {
   wallReflectionAmplitudeTop: number;
   wallReflectionAmplitudeBottom: number;
   floorReflectionAmplitude: number;
-  enableWallReflections: boolean;
+  enableWallReflectionLeft: boolean;
+  enableWallReflectionRight: boolean;
+  enableWallReflectionTop: boolean;
+  enableWallReflectionBottom: boolean;
   enableFloorReflection: boolean;
   listenerHeightM: number;
 }
@@ -118,17 +121,23 @@ export function samplePointSPL(
     }
     
     // First-order wall reflections (image sources in plan view, using true source height)
-    if (settings.enableWallReflections) {
-      // Left wall (x = 0)
+    // Left wall (x = 0)
+    if (settings.enableWallReflectionLeft) {
       addPathContribution(totalPressure, xMeters, yMeters, settings.listenerHeightM, -source.x, source.y, srcZ, srcAmp, srcPhase, settings.wallReflectionAmplitudeLeft, waveNumber, isCardioid, -fwdX, fwdY);
-      
-      // Right wall (x = room.width)
+    }
+    
+    // Right wall (x = room.width)
+    if (settings.enableWallReflectionRight) {
       addPathContribution(totalPressure, xMeters, yMeters, settings.listenerHeightM, 2 * room.width - source.x, source.y, srcZ, srcAmp, srcPhase, settings.wallReflectionAmplitudeRight, waveNumber, isCardioid, -fwdX, fwdY);
-      
-      // Bottom wall (y = 0)
+    }
+    
+    // Bottom wall (y = 0)
+    if (settings.enableWallReflectionBottom) {
       addPathContribution(totalPressure, xMeters, yMeters, settings.listenerHeightM, source.x, -source.y, srcZ, srcAmp, srcPhase, settings.wallReflectionAmplitudeBottom, waveNumber, isCardioid, fwdX, -fwdY);
-      
-      // Top wall (y = room.height)
+    }
+    
+    // Top wall (y = room.height)
+    if (settings.enableWallReflectionTop) {
       addPathContribution(totalPressure, xMeters, yMeters, settings.listenerHeightM, source.x, 2 * room.height - source.y, srcZ, srcAmp, srcPhase, settings.wallReflectionAmplitudeTop, waveNumber, isCardioid, fwdX, -fwdY);
     }
   }

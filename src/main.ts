@@ -24,9 +24,15 @@ export interface AppState {
 
   frequency: number;
   speedOfSound: number;
-  wallReflectionAmplitude: number;
+  wallReflectionAmplitudeLeft: number;
+  wallReflectionAmplitudeRight: number;
+  wallReflectionAmplitudeTop: number;
+  wallReflectionAmplitudeBottom: number;
   floorReflectionAmplitude: number;
-  enableWallReflections: boolean;
+  enableWallReflectionLeft: boolean;
+  enableWallReflectionRight: boolean;
+  enableWallReflectionTop: boolean;
+  enableWallReflectionBottom: boolean;
   enableFloorReflection: boolean;
   listenerHeightM: number;
 
@@ -54,9 +60,15 @@ const appState: AppState = {
 
   frequency: 63.0,
   speedOfSound: 343.0,
-  wallReflectionAmplitude: 0.8,
+  wallReflectionAmplitudeLeft: 0.8,
+  wallReflectionAmplitudeRight: 0.8,
+  wallReflectionAmplitudeTop: 0.8,
+  wallReflectionAmplitudeBottom: 0.8,
   floorReflectionAmplitude: 0.8,
-  enableWallReflections: true,
+  enableWallReflectionLeft: true,
+  enableWallReflectionRight: true,
+  enableWallReflectionTop: true,
+  enableWallReflectionBottom: true,
   enableFloorReflection: true,
   listenerHeightM: 1.5,
 
@@ -135,16 +147,35 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     </fieldset>
 
     <fieldset class="fieldset-complex">
+      <legend>Wall Reflections</legend>
+      <div>
+        <strong>Left Wall</strong><br/>
+        ${createCheckbox('Enabled', 'enableWallReflectionLeft')}
+        ${createNumberInput('Amp. Coeff', 'wallReflectionAmplitudeLeft', '0.1')}
+      </div>
+      <div>
+        <strong>Right Wall</strong><br/>
+        ${createCheckbox('Enabled', 'enableWallReflectionRight')}
+        ${createNumberInput('Amp. Coeff', 'wallReflectionAmplitudeRight', '0.1')}
+      </div>
+      <div>
+        <strong>Top Wall</strong><br/>
+        ${createCheckbox('Enabled', 'enableWallReflectionTop')}
+        ${createNumberInput('Amp. Coeff', 'wallReflectionAmplitudeTop', '0.1')}
+      </div>
+      <div>
+        <strong>Bottom Wall</strong><br/>
+        ${createCheckbox('Enabled', 'enableWallReflectionBottom')}
+        ${createNumberInput('Amp. Coeff', 'wallReflectionAmplitudeBottom', '0.1')}
+      </div>
+    </fieldset>
+
+    <fieldset class="fieldset-complex">
       <legend>Room characteristics</legend>
       <div>
         <strong>Dimensions</strong><br/>
         ${createNumberInput('Width (X) (m)', 'roomWidthM', '1')}
         ${createNumberInput('Length (Y) (m)', 'roomHeightM', '1')}
-      </div>
-      <div>
-        <strong>Wall Reflections</strong><br/>
-        ${createCheckbox('Enabled', 'enableWallReflections')}
-        ${createNumberInput('Amp. Coeff', 'wallReflectionAmplitude', '0.1')}
       </div>
       <div>
         <strong>Floor Reflection</strong><br/>
@@ -195,12 +226,15 @@ function buildAcousticSettings(): AcousticSettings {
   return {
     frequency: appState.frequency,
     speedOfSound: appState.speedOfSound,
-    wallReflectionAmplitudeLeft: appState.wallReflectionAmplitude,
-    wallReflectionAmplitudeRight: appState.wallReflectionAmplitude,
-    wallReflectionAmplitudeTop: appState.wallReflectionAmplitude,
-    wallReflectionAmplitudeBottom: appState.wallReflectionAmplitude,
+    wallReflectionAmplitudeLeft: appState.wallReflectionAmplitudeLeft,
+    wallReflectionAmplitudeRight: appState.wallReflectionAmplitudeRight,
+    wallReflectionAmplitudeTop: appState.wallReflectionAmplitudeTop,
+    wallReflectionAmplitudeBottom: appState.wallReflectionAmplitudeBottom,
     floorReflectionAmplitude: appState.floorReflectionAmplitude,
-    enableWallReflections: appState.enableWallReflections,
+    enableWallReflectionLeft: appState.enableWallReflectionLeft,
+    enableWallReflectionRight: appState.enableWallReflectionRight,
+    enableWallReflectionTop: appState.enableWallReflectionTop,
+    enableWallReflectionBottom: appState.enableWallReflectionBottom,
     enableFloorReflection: appState.enableFloorReflection,
     listenerHeightM: appState.listenerHeightM,
   };
@@ -374,8 +408,14 @@ wireNumber('sub2DirectionDeg');
 wireNumber('roomWidthM', 1);
 wireNumber('roomHeightM', 1);
 
-wireCheckbox('enableWallReflections');
-wireNumber('wallReflectionAmplitude', 0, 1);
+wireCheckbox('enableWallReflectionLeft');
+wireNumber('wallReflectionAmplitudeLeft', 0, 1);
+wireCheckbox('enableWallReflectionRight');
+wireNumber('wallReflectionAmplitudeRight', 0, 1);
+wireCheckbox('enableWallReflectionTop');
+wireNumber('wallReflectionAmplitudeTop', 0, 1);
+wireCheckbox('enableWallReflectionBottom');
+wireNumber('wallReflectionAmplitudeBottom', 0, 1);
 
 wireCheckbox('enableFloorReflection');
 wireNumber('floorReflectionAmplitude', 0, 1);
@@ -447,7 +487,7 @@ function exportToPng() {
     `Date: ${new Date().toISOString()}`,
     `Room: ${formatNum(appState.roomWidthM)} m x ${formatNum(appState.roomHeightM)} m`,
     `Frequency: ${formatNum(appState.frequency)} Hz`,
-    `Wall Reflection: ${appState.enableWallReflections ? formatNum(appState.wallReflectionAmplitude) : 'Off'}`,
+    `Wall Refl: L:${appState.enableWallReflectionLeft ? formatNum(appState.wallReflectionAmplitudeLeft) : 'Off'} R:${appState.enableWallReflectionRight ? formatNum(appState.wallReflectionAmplitudeRight) : 'Off'} T:${appState.enableWallReflectionTop ? formatNum(appState.wallReflectionAmplitudeTop) : 'Off'} B:${appState.enableWallReflectionBottom ? formatNum(appState.wallReflectionAmplitudeBottom) : 'Off'}`,
     `Floor Reflection: ${appState.enableFloorReflection ? formatNum(appState.floorReflectionAmplitude) : 'Off'}`,
     `Listener Height: ${formatNum(appState.listenerHeightM)} m`,
     `Dynamic Range: ${formatNum(appState.dynamicRangeDb)} dB`,
