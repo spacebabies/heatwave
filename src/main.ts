@@ -137,6 +137,11 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <fieldset class="fieldset-complex">
       <legend>Room characteristics</legend>
       <div>
+        <strong>Dimensions</strong><br/>
+        ${createNumberInput('Width (X) (m)', 'roomWidthM', '1')}
+        ${createNumberInput('Length (Y) (m)', 'roomHeightM', '1')}
+      </div>
+      <div>
         <strong>Wall Reflections</strong><br/>
         ${createCheckbox('Enabled', 'enableWallReflections')}
         ${createNumberInput('Amp. Coeff', 'wallReflectionAmplitude', '0.1')}
@@ -190,7 +195,10 @@ function buildAcousticSettings(): AcousticSettings {
   return {
     frequency: appState.frequency,
     speedOfSound: appState.speedOfSound,
-    wallReflectionAmplitude: appState.wallReflectionAmplitude,
+    wallReflectionAmplitudeLeft: appState.wallReflectionAmplitude,
+    wallReflectionAmplitudeRight: appState.wallReflectionAmplitude,
+    wallReflectionAmplitudeTop: appState.wallReflectionAmplitude,
+    wallReflectionAmplitudeBottom: appState.wallReflectionAmplitude,
     floorReflectionAmplitude: appState.floorReflectionAmplitude,
     enableWallReflections: appState.enableWallReflections,
     enableFloorReflection: appState.enableFloorReflection,
@@ -284,6 +292,8 @@ function renderToContext(
 }
 
 function render() {
+  canvas.width = appState.roomWidthM * PIXELS_PER_METER;
+  canvas.height = appState.roomHeightM * PIXELS_PER_METER;
   renderToContext(ctx, canvas.width, canvas.height, PIXELS_PER_METER, 4, false);
 }
 
@@ -360,6 +370,9 @@ wireNumber('sub2Y');
 wireNumber('sub2Z', 0, 20);
 wireCheckbox('sub2CardioidEnabled');
 wireNumber('sub2DirectionDeg');
+
+wireNumber('roomWidthM', 1);
+wireNumber('roomHeightM', 1);
 
 wireCheckbox('enableWallReflections');
 wireNumber('wallReflectionAmplitude', 0, 1);

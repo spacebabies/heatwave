@@ -49,7 +49,6 @@ Use rich, semantic HTML. Do not use a `<div>` when a `<fieldset>` would be more 
 
 ## To Do
 
-- Allow Room dimensions to be changed
 - Allow Z-axis per sub
 - Allow per-wall reflection coefficient
 - Support absolute calibrated SPL.
