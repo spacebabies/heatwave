@@ -64,7 +64,7 @@ const appState: AppState = {
   wallReflectionAmplitudeRight: 0.8,
   wallReflectionAmplitudeTop: 0.8,
   wallReflectionAmplitudeBottom: 0.8,
-  floorReflectionAmplitude: 0.8,
+  floorReflectionAmplitude: 0.9,
   enableWallReflectionLeft: true,
   enableWallReflectionRight: true,
   enableWallReflectionTop: true,
@@ -341,7 +341,7 @@ controls.addEventListener('input', (e) => {
   if (!target.id || target.type === 'checkbox') return;
 
   const stateKey = target.id as keyof AppState;
-  
+
   if (target.type === 'number') {
     const val = parseFloat(target.value);
     if (!isNaN(val)) {
