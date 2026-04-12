@@ -87,12 +87,14 @@ function createCheckbox(label: string, stateKey: keyof AppState) {
   `;
 }
 
-function createNumberInput(label: string, stateKey: keyof AppState, step: string) {
+function createNumberInput(label: string, stateKey: keyof AppState, step: string, min?: string, max?: string) {
   const value = appState[stateKey] as number;
+  const minAttr = min !== undefined ? ` min="${min}"` : '';
+  const maxAttr = max !== undefined ? ` max="${max}"` : '';
   return `
     <label>
       ${label}:
-      <input type="number" id="${stateKey}" value="${value}" class="number-input" step="${step}">
+      <input type="number" id="${stateKey}" value="${value}" class="number-input" step="${step}"${minAttr}${maxAttr}>
     </label><br/>
   `;
 }
@@ -124,25 +126,25 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div>
         <strong>Sub 1</strong><br/>
         ${createCheckbox('Enabled', 'sub1Enabled')}
-        ${createNumberInput('X (m)', 'sub1X', '0.1')}
-        ${createNumberInput('Y (m)', 'sub1Y', '0.1')}
-        ${createNumberInput('Z (m)', 'sub1Z', '0.1')}
+        ${createNumberInput('X (m)', 'sub1X', '0.1', '0')}
+        ${createNumberInput('Y (m)', 'sub1Y', '0.1', '0')}
+        ${createNumberInput('Z (m)', 'sub1Z', '0.1', '0', '20')}
         ${createCheckbox('Cardioid', 'sub1CardioidEnabled')}
         ${createNumberInput('Direction (°)', 'sub1DirectionDeg', '1')}
       </div>
       <div>
         <strong>Sub 2</strong><br/>
         ${createCheckbox('Enabled', 'sub2Enabled')}
-        ${createNumberInput('X (m)', 'sub2X', '0.1')}
-        ${createNumberInput('Y (m)', 'sub2Y', '0.1')}
-        ${createNumberInput('Z (m)', 'sub2Z', '0.1')}
+        ${createNumberInput('X (m)', 'sub2X', '0.1', '0')}
+        ${createNumberInput('Y (m)', 'sub2Y', '0.1', '0')}
+        ${createNumberInput('Z (m)', 'sub2Z', '0.1', '0', '20')}
         ${createCheckbox('Cardioid', 'sub2CardioidEnabled')}
         ${createNumberInput('Direction (°)', 'sub2DirectionDeg', '1')}
       </div>
       <div>
         <strong>Heights & Display</strong><br/>
-        ${createNumberInput('Listener Height (m)', 'listenerHeightM', '0.1')}
-        ${createNumberInput('Display Range (dB below peak)', 'dynamicRangeDb', '1')}
+        ${createNumberInput('Listener Height (m)', 'listenerHeightM', '0.1', '0', '20')}
+        ${createNumberInput('Display Range (dB below peak)', 'dynamicRangeDb', '1', '10', '120')}
       </div>
     </fieldset>
 
@@ -333,39 +335,27 @@ function render() {
 
 // --- Wire Controls ---
 
-function wireText(stateKey: keyof AppState) {
-  const el = document.getElementById(stateKey) as HTMLInputElement;
-  if (!el) return;
-  el.addEventListener('input', () => {
-    (appState as any)[stateKey] = el.value;
-  });
-}
-
-function wireCheckbox(stateKey: keyof AppState) {
-  const el = document.getElementById(stateKey) as HTMLInputElement;
-  if (!el) return;
-  el.addEventListener('change', () => {
-    (appState as any)[stateKey] = el.checked;
-    render();
-  });
-}
-
 // Angle convention: 0 = up, 90 = right, 180 = down, 270 = left
 function normalizeAngleDeg(deg: number): number {
   return ((deg % 360) + 360) % 360;
 }
 
-function wireNumber(stateKey: keyof AppState, min?: number, max?: number) {
-  const el = document.getElementById(stateKey) as HTMLInputElement;
-  if (!el) return;
-  el.addEventListener('input', () => {
-    const val = parseFloat(el.value);
+const controls = document.getElementById('controls')!;
+
+controls.addEventListener('input', (e) => {
+  const target = e.target as HTMLInputElement;
+  if (!target.id || target.type === 'checkbox') return;
+
+  const stateKey = target.id as keyof AppState;
+  
+  if (target.type === 'number') {
+    const val = parseFloat(target.value);
     if (!isNaN(val)) {
       let finalVal = val;
 
-      // Enforce bounds
-      if (min !== undefined && finalVal < min) finalVal = min;
-      if (max !== undefined && finalVal > max) finalVal = max;
+      // Enforce HTML bounds
+      if (target.hasAttribute('min') && finalVal < parseFloat(target.min)) finalVal = parseFloat(target.min);
+      if (target.hasAttribute('max') && finalVal > parseFloat(target.max)) finalVal = parseFloat(target.max);
 
       // Enforce room limits for coordinates
       if (stateKey.endsWith('X')) {
@@ -385,43 +375,20 @@ function wireNumber(stateKey: keyof AppState, min?: number, max?: number) {
       (appState as any)[stateKey] = finalVal;
       render();
     }
-  });
-}
+  } else if (target.type === 'text') {
+    (appState as any)[stateKey] = target.value;
+    // Don't render for text (project name) as it doesn't affect canvas
+  }
+});
 
-// Attach event listeners
-wireText('projectName');
+controls.addEventListener('change', (e) => {
+  const target = e.target as HTMLInputElement;
+  if (!target.id || target.type !== 'checkbox') return;
 
-wireCheckbox('sub1Enabled');
-wireNumber('sub1X');
-wireNumber('sub1Y');
-wireNumber('sub1Z', 0, 20);
-wireCheckbox('sub1CardioidEnabled');
-wireNumber('sub1DirectionDeg');
-
-wireCheckbox('sub2Enabled');
-wireNumber('sub2X');
-wireNumber('sub2Y');
-wireNumber('sub2Z', 0, 20);
-wireCheckbox('sub2CardioidEnabled');
-wireNumber('sub2DirectionDeg');
-
-wireNumber('roomWidthM', 1);
-wireNumber('roomHeightM', 1);
-
-wireCheckbox('enableWallReflectionLeft');
-wireNumber('wallReflectionAmplitudeLeft', 0, 1);
-wireCheckbox('enableWallReflectionRight');
-wireNumber('wallReflectionAmplitudeRight', 0, 1);
-wireCheckbox('enableWallReflectionTop');
-wireNumber('wallReflectionAmplitudeTop', 0, 1);
-wireCheckbox('enableWallReflectionBottom');
-wireNumber('wallReflectionAmplitudeBottom', 0, 1);
-
-wireCheckbox('enableFloorReflection');
-wireNumber('floorReflectionAmplitude', 0, 1);
-
-wireNumber('listenerHeightM', 0, 20); // Clamp listener to room height
-wireNumber('dynamicRangeDb', 10, 120); // Clamp dB range 10-120
+  const stateKey = target.id as keyof AppState;
+  (appState as any)[stateKey] = target.checked;
+  render();
+});
 
 // Initial render
 render();
