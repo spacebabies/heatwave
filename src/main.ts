@@ -114,6 +114,9 @@ function createTextInput(label: string, stateKey: keyof AppState) {
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div class="canvas-container">
     <canvas id="roomCanvas" width="800" height="400"></canvas>
+    <div class="canvas-instructions">
+      <small><strong>Refl. Coeffs:</strong> Glass ~0.95 | Wood ~0.90 | Concrete ~0.80</small>
+    </div>
   </div>
   <div id="controls">
     <fieldset class="fieldset-complex">
@@ -176,22 +179,13 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <legend>Room characteristics</legend>
       <div>
         <strong>Dimensions</strong><br/>
-        ${createNumberInput('Width (X) (m)', 'roomWidthM', '1')}
-        ${createNumberInput('Length (Y) (m)', 'roomHeightM', '1')}
+        ${createNumberInput('Width (X) (m)', 'roomWidthM', '1', '1')}
+        ${createNumberInput('Length (Y) (m)', 'roomHeightM', '1', '1')}
       </div>
       <div>
         <strong>Floor Reflection</strong><br/>
         ${createCheckbox('Enabled', 'enableFloorReflection')}
-        ${createNumberInput('Amp. Coeff', 'floorReflectionAmplitude', '0.1')}
-      </div>
-
-      <div class="note-text">
-        <ul>
-          <li>Glass ~0.95</li>
-          <li>Parquet/Hardwood ~0.90</li>
-          <li>Concrete/Hard drywall ~0.80</li>
-        </ul>
-        <p>Note: These are rough starting points, not absolute material constants.</p>
+        ${createNumberInput('Amp. Coeff', 'floorReflectionAmplitude', '0.1', '0', '1')}
       </div>
     </fieldset>
 
